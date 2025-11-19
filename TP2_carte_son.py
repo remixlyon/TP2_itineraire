@@ -70,8 +70,11 @@ if __name__ == "__main__":
     plt.rcParams["figure.figsize"] = (10, 10)
     fig, ax = plt.subplots()
 
-    nx.draw_networkx(G,pos=sommets,ax=ax)
+    # Cela inverse l'image et la carte. C'est due à la différence entre nx et matlab
+    img = mpimg.imread("carte.jpg")
+    ax.imshow(img,cmap="gray")
 
+    nx.draw_networkx(G,pos=sommets,ax=ax)
     plt.show()
 
 
