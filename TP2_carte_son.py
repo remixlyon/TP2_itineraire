@@ -162,6 +162,15 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin, graphe, sommets, chemin_image_
     plt.title(f"Chemin: {chemin[0]} -> {chemin[-1]}, {titre}")
     plt.show()
 
+def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere):
+    try:
+        meilleur_chemin = nx.shortest_path(graphe, source=ville_depart, target=ville_arrivee, weight=critere)
+    except nx.NetworkXNoPath:
+        print(f"Aucun chemin n'existe entre {ville_depart} et {ville_arrivee}.")
+        return []
+    return meilleur_chemin
+
+
 if __name__ == "__main__":
     # import sommets data, aretes data et l'image
     matrice_sommets = charger_csv_en_matrice("TP2_position.csv")
@@ -187,13 +196,13 @@ if __name__ == "__main__":
     # Q2 - chemin le plus court
     ville_depart="Paris"
     ville_arrivee="Marseille"
-    chemin_duree = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='duree')
+    chemin_duree = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
     dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, "meilleure durée")
 
     # Q3 - chemin le moins cher
     ville_depart="Paris"
     ville_arrivee="Marseille"
-    chemin_cout = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='cout')
+    chemin_cout = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, "meilleur cout")
 
     # Q4 - chemin le plus court SANS autoroutes
@@ -206,7 +215,7 @@ if __name__ == "__main__":
     for u, v, data in G.edges(data=True):
         if data['type'] != 'a':
             G_filtre.add_edge(u, v, **data)
-    chemin_duree_sans_a = nx.shortest_path(G_filtre, source=ville_depart, target=ville_arrivee, weight='duree')
+    chemin_duree_sans_a = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
     dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G, sommets, chemin_image_carte, "meilleure durée sans A")
 
 
@@ -220,7 +229,7 @@ if __name__ == "__main__":
     for u, v, data in G.edges(data=True):
         if data['type'] != 'd':
             G_filtre.add_edge(u, v, **data)
-    chemin_cout_sans_d = nx.shortest_path(G_filtre, source=ville_depart, target=ville_arrivee, weight='duree')
+    chemin_cout_sans_d = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G, sommets, chemin_image_carte, "meilleur cout sans D")
 
     
