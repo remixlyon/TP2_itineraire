@@ -90,7 +90,17 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte):
     #     font_size=6,
     #     ax=ax
     # )
-    
+
+        # Surligner les arêtes du chemin
+    nx.draw_networkx_edges(
+        graphe,
+        pos=sommets,
+        ax=ax,
+        edgelist=[('Paris', 'Rennes'),('Rennes','Brest')],
+        edge_color='blue',
+        width=4
+    )
+
     # afficher la zone (avec le plot ax)
     plt.show()
 
@@ -107,6 +117,7 @@ if __name__ == "__main__":
     G=creer_graphe(matrice_aretes)
     
     print(nx.is_connected(G))
+
     ville_depart="Paris"
     ville_arrivee="Marseille"
     chemin_duree = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='duree')
