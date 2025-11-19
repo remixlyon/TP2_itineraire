@@ -51,7 +51,7 @@ def creer_graphe(matrice_aretes):
         G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
     return G
 
-def dessiner_graphe_sur_carte(graphe, positions, chemin_image_carte):
+def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte):
     # lire l'image
     img = mpimg.imread(chemin_image_carte)
 
@@ -75,42 +75,46 @@ def dessiner_graphe_sur_carte(graphe, positions, chemin_image_carte):
     # utilisant nx, dessiner le graphe
     nx.draw_networkx(
         graphe, # réseau des liaisons
-        pos=positions, # sommets
+        pos=sommets, # sommets
         ax=ax, # plot
         edge_color=couleurs_aretes,
         font_size=10,
         width=2
     )
 
-    edge_labels = {(u, v): f"{d['cout']}€\n{d['duree']}h" for u, v, d in graphe.edges(data=True)}
-    nx.draw_networkx_edge_labels(
-        graphe,
-        pos=positions,
-        edge_labels=edge_labels,
-        font_size=6,
-        ax=ax
-    )
+    # edge_labels = {(u, v): f"{d['cout']}€\n{d['duree']}h" for u, v, d in graphe.edges(data=True)}
+    # nx.draw_networkx_edge_labels(
+    #     graphe,
+    #     pos=positions,
+    #     edge_labels=edge_labels,
+    #     font_size=6,
+    #     ax=ax
+    # )
     
     # afficher la zone (avec le plot ax)
     plt.show()
 
 if __name__ == "__main__":
-    # import sommets data
+    # import sommets data, aretes data et l'image
     matrice_sommets = charger_csv_en_matrice("TP2_position.csv")
-    print(matrice_sommets)
-
-    # import arêtes data
     matrice_aretes = charger_csv_en_matrice("TP2_liaison.csv")
-    print(matrice_aretes)
+    chemin_image_carte = "carte.jpg"
 
     # creer sommets dict
     sommets = charger_sommets(matrice_sommets)
-    print(sommets)
 
     # creer graphe
     G=creer_graphe(matrice_aretes)
+    
+    print(nx.is_connected(G))
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
+    chemin_duree = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='duree')
+    print(chemin_duree)
 
-    dessiner_graphe_sur_carte(G, sommets, "carte.jpg")
+    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte)
+
+    
 
 
     
