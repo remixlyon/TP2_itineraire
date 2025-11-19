@@ -188,13 +188,44 @@ if __name__ == "__main__":
     ville_depart="Paris"
     ville_arrivee="Marseille"
     chemin_duree = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='duree')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, "meilleure duree")
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, "meilleure durée")
 
     # Q3 - chemin le moins cher
     ville_depart="Paris"
     ville_arrivee="Marseille"
     chemin_cout = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='cout')
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, "meilleur cout")
+
+    # Q4 - chemin le plus court SANS autoroutes
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
+    
+    G_filtre = nx.Graph()
+    G_filtre.add_nodes_from(G.nodes())
+    
+    for u, v, data in G.edges(data=True):
+        if data['type'] != 'a':
+            G_filtre.add_edge(u, v, **data)
+    chemin_duree_sans_a = nx.shortest_path(G_filtre, source=ville_depart, target=ville_arrivee, weight='duree')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G, sommets, chemin_image_carte, "meilleure durée sans A")
+
+
+    # Q5 - chemin le moins cher SANS départementales
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
+    
+    G_filtre = nx.Graph()
+    G_filtre.add_nodes_from(G.nodes())
+    
+    for u, v, data in G.edges(data=True):
+        if data['type'] != 'd':
+            G_filtre.add_edge(u, v, **data)
+    chemin_cout_sans_d = nx.shortest_path(G_filtre, source=ville_depart, target=ville_arrivee, weight='duree')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G, sommets, chemin_image_carte, "meilleur cout sans D")
+
+    
+    
+
 
     
     
