@@ -51,6 +51,49 @@ def creer_graphe(matrice_aretes):
         G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
     return G
 
+def dessiner_graphe_sur_carte(graphe, positions, chemin_image_carte):
+    # lire l'image
+    img = mpimg.imread(chemin_image_carte)
+
+    # size canvas = 10x10
+    plt.rcParams["figure.figsize"] = (10, 10)
+
+    # ax = plot zone
+    fig, ax = plt.subplots()
+    
+    # afficher img dans ax, couleur grise, cela inverse le graphe
+    ax.imshow(img,cmap="gray")
+    
+    # arete autoroute = red, arte departemental = green
+    couleurs_aretes = []
+    for u, v in graphe.edges():
+        if graphe.edges[u, v]['type'] == 'a':
+            couleurs_aretes.append('red')
+        else:
+            couleurs_aretes.append('green')
+
+    # utilisant nx, dessiner le graphe
+    nx.draw_networkx(
+        graphe, # réseau des liaisons
+        pos=positions, # sommets
+        ax=ax, # plot
+        edge_color=couleurs_aretes,
+        font_size=10,
+        width=2
+    )
+
+    edge_labels = {(u, v): f"{d['cout']}€\n{d['duree']}h" for u, v, d in graphe.edges(data=True)}
+    nx.draw_networkx_edge_labels(
+        graphe,
+        pos=positions,
+        edge_labels=edge_labels,
+        font_size=6,
+        ax=ax
+    )
+    
+    # afficher la zone (avec le plot ax)
+    plt.show()
+
 if __name__ == "__main__":
     # import sommets data
     matrice_sommets = charger_csv_en_matrice("TP2_position.csv")
@@ -67,15 +110,7 @@ if __name__ == "__main__":
     # creer graphe
     G=creer_graphe(matrice_aretes)
 
-    plt.rcParams["figure.figsize"] = (10, 10)
-    fig, ax = plt.subplots()
-
-    # Cela inverse l'image et la carte. C'est due à la différence entre nx et matlab
-    img = mpimg.imread("carte.jpg")
-    ax.imshow(img,cmap="gray")
-
-    nx.draw_networkx(G,pos=sommets,ax=ax)
-    plt.show()
+    dessiner_graphe_sur_carte(G, sommets, "carte.jpg")
 
 
     
