@@ -51,7 +51,7 @@ def creer_graphe(matrice_aretes):
         G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
     return G
 
-def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte):
+def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre):
     # lire l'image
     img = mpimg.imread(chemin_image_carte)
 
@@ -82,7 +82,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte):
         width=2
     )
 
-    # edge_labels = {(u, v): f"{d['cout']}€\n{d['duree']}h" for u, v, d in graphe.edges(data=True)}
+    # edge_labels = {(u, v): f"{d['cout']}€\n{d['duree']}m" for u, v, d in graphe.edges(data=True)}
     # nx.draw_networkx_edge_labels(
     #     graphe,
     #     pos=positions,
@@ -91,17 +91,75 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte):
     #     ax=ax
     # )
 
-        # Surligner les arêtes du chemin
+    
+
+    # afficher la zone (avec le plot ax)
+    plt.title(f"{titre}")
+    plt.show()
+
+def dessiner_graphe_sur_carte_avec_chemin(chemin, graphe, sommets, chemin_image_carte, titre):
+    # Calcul du coût et de la durée
+    total_duree = 0
+    total_cout = 0
+    aretes_chemin = []
+    couleurs_aretes = []
+
+    for i in range(len(chemin) - 1):
+        u = chemin[i]
+        v = chemin[i+1]
+        data = graphe.get_edge_data(u, v)
+        print(data)
+        
+        total_duree += data['duree']
+        total_cout += data['cout']
+        aretes_chemin.append((u, v))
+
+        if data['type'] == 'a':
+            couleurs_aretes.append('red')
+        else:
+            couleurs_aretes.append('green')
+        
+    print(f"--- Itinéraire: {' -> '.join(chemin)} ---")
+    print(f"    Durée totale estimée: {total_duree} minutes")
+    print(f"    Coût total estimé: {total_cout:.2f} €")
+
+    img = mpimg.imread(chemin_image_carte)
+    
+    plt.rcParams["figure.figsize"] = (10, 10)
+    fig, ax = plt.subplots()
+    ax.imshow(img,cmap="gray")
+   
+    # utilisant nx, dessiner le graphe, couleur grise pour highlight plus tard
+    nx.draw_networkx(
+        graphe, # réseau des liaisons
+        pos=sommets, # sommets
+        ax=ax, # plot
+        node_color='gray',
+        edge_color='lightgray',
+        font_size=10,
+        width=1
+    )
+
+    # Surligner les arêtes du chemin
     nx.draw_networkx_edges(
         graphe,
         pos=sommets,
         ax=ax,
-        edgelist=[('Paris', 'Rennes'),('Rennes','Brest')],
-        edge_color='blue',
+        edgelist=aretes_chemin,
+        edge_color=couleurs_aretes,
         width=4
     )
-
-    # afficher la zone (avec le plot ax)
+    
+    # Surligner les sommets du chemin
+    nx.draw_networkx_nodes(
+        graphe,
+        pos=sommets,
+        ax=ax,
+        nodelist=chemin,
+        node_color='red'
+    )
+    
+    plt.title(f"Chemin: {chemin[0]} -> {chemin[-1]}, {titre}")
     plt.show()
 
 if __name__ == "__main__":
@@ -116,15 +174,29 @@ if __name__ == "__main__":
     # creer graphe
     G=creer_graphe(matrice_aretes)
     
-    print(nx.is_connected(G))
+    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "carte initiale")
 
+    # ==============================================
+    
+    # Q1
+    if nx.is_connected(G):
+        connexe = "est connexe"
+    else: connexe = "n'est pas connexe"
+    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, f"graphe {connexe}")
+
+    # Q2 - chemin le plus court
     ville_depart="Paris"
     ville_arrivee="Marseille"
     chemin_duree = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='duree')
-    print(chemin_duree)
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, "meilleure duree")
 
-    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte)
+    # Q3 - chemin le moins cher
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
+    chemin_cout = nx.shortest_path(G, source=ville_depart, target=ville_arrivee, weight='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, "meilleur cout")
 
+    
     
 
 
