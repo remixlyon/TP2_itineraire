@@ -1,4 +1,7 @@
 import csv
+import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 def charger_csv_en_matrice(nom_fichier):
     matrice = []
@@ -27,11 +30,49 @@ def charger_sommets(matrice_position):
     
     return sommets
 
-if __name__ == "__main__":
-    matrice = charger_csv_en_matrice("TP2_position.csv")
-    print(matrice)
+def creer_graphe(matrice_aretes):
+    G = nx.Graph()
+    header = matrice_aretes[0]
+    
+    # Noter l'indexe de chaque champ
+    idx_v1 = header.index('Ville1')
+    idx_v2 = header.index('ville2')
+    idx_type = header.index('type')
+    idx_duree = header.index('duree')
+    idx_cout = header.index('cout')
 
-    sommets = charger_sommets(matrice)
+    # pour chaque ligne, ajoute une liaison entre 2 villes
+    for ligne in matrice_aretes[1:]:
+        ville1 = ligne[idx_v1]
+        ville2 = ligne[idx_v2]
+        type_liaison = ligne[idx_type]
+        duree = float(ligne[idx_duree])
+        cout = float(ligne[idx_cout])
+        G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
+    return G
+
+if __name__ == "__main__":
+    # import sommets data
+    matrice_sommets = charger_csv_en_matrice("TP2_position.csv")
+    print(matrice_sommets)
+
+    # import arêtes data
+    matrice_aretes = charger_csv_en_matrice("TP2_liaison.csv")
+    print(matrice_aretes)
+
+    # creer sommets dict
+    sommets = charger_sommets(matrice_sommets)
     print(sommets)
+
+    # creer graphe
+    G=creer_graphe(matrice_aretes)
+
+    plt.rcParams["figure.figsize"] = (10, 10)
+    fig, ax = plt.subplots()
+
+    nx.draw_networkx(G,pos=sommets,ax=ax)
+
+    plt.show()
+
 
     
