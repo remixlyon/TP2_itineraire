@@ -110,7 +110,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
 
     plt.show()
 
-def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = "", direction=False, export_path=None):
+def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, titre, contrainte = "", direction=False, export_path=None):
     img = mpimg.imread(chemin_image_carte)
     
     plt.rcParams["figure.figsize"] = (10, 10)
@@ -119,18 +119,16 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
    
     # utilisant nx, dessiner le graphe, couleur grise pour highlight plus tard
     nx.draw_networkx(
-        graphe, # réseau des liaisons
-        pos=sommets, # sommets
-        ax=ax, # plot
+        graphe,
+        pos=sommets,
+        ax=ax,
         node_color='gray',
         edge_color='lightgray',
         font_size=10,
         width=1
     )
     
-    # Surligner les sommets du chemin
-
-
+    # Surligner en rouge les sommets intermédiaires du chemin
     if len(chemin) > 2:
         nx.draw_networkx_nodes(
             graphe,
@@ -140,6 +138,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
             node_color='red'
         )
 
+    # Surligner en blue les extrémités du chemin
     nx.draw_networkx_nodes(
         graphe,
         pos=sommets,
@@ -174,8 +173,10 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
                 arrows=direction
             )
 
-            detail = f"meilleur coût = {data['cout']}€" if critere=='cout' else f"meilleur temps = {data['duree']} minutes"
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
+            # detail = f"meilleur coût = {data['cout']}€" if critere=='cout' else f"meilleur temps = {data['duree']} minutes"
+            # plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
+            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}")
+
         else:
             plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: pas de route")
     else:
@@ -218,8 +219,9 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
                 arrows=direction
             )
 
-            detail = f"meilleur coût = {round(total_cout,2)}€" if critere=='cout' else f"meilleur temps = {round(total_duree,2)} minutes"
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
+            # detail = f"meilleur coût = {round(total_cout,2)}€" if critere=='cout' else f"meilleur temps = {round(total_duree,2)} minutes"
+            # plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
+            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}")
 
     # Afficher cout / durée sur la carte
     if critere == 'cout':
@@ -311,122 +313,117 @@ if __name__ == "__main__":
 
     # =================================================================================================
     
-    # # Q1
-    # if nx.is_connected(G):
-    #     connexe = "est connexe"
-    # else: connexe = "n'est pas connexe"
-    # print(f"Q1: Le graphe {connexe}")
-    # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, f"graphe {connexe}")
+    # Q1
+    if nx.is_connected(G):
+        connexe = "est connexe"
+    else: connexe = "n'est pas connexe"
+    print(f"Q1: Le graphe {connexe}")
+    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, f"graphe {connexe}")
 
 
 
-    # # Q2 - chemin le plus court
-    # ville_depart="Paris"
-    # ville_arrivee="Rennes"
-    # print(f"Q2: Chemin le plus court entre : {ville_depart} et {ville_arrivee}")
-    # chemin_duree = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, critere='duree')
+    # Q2 - chemin le plus court
+    ville_depart="Paris"
+    ville_arrivee="Rennes"
+    print(f"Q2: Chemin le plus court entre : {ville_depart} et {ville_arrivee}")
+    chemin_duree = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, titre='chemin le plus court', critere='duree')
 
 
 
-    # # Q3 - chemin le moins cher
-    # ville_depart="Paris"
-    # ville_arrivee="Marseille"
+    # Q3 - chemin le moins cher
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
 
-    # print(f"Q3: Chemin le moins cher entre : {ville_depart} et {ville_arrivee}")
-    # chemin_cout = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, critere='cout')
+    print(f"Q3: Chemin le moins cher entre : {ville_depart} et {ville_arrivee}")
+    chemin_cout = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, titre='chemin le moins cher', critere='cout')
 
 
 
-    # # Q4 - chemin le plus court SANS autoroutes
-    # ville_depart="Paris"
-    # ville_arrivee="Havre"
+    # Q4 - chemin le plus court SANS autoroutes
+    ville_depart="Paris"
+    ville_arrivee="Havre"
     
-    # print(f"Q4: Chemin le plus court SANS autoroutes entre : {ville_depart} et {ville_arrivee}")
-    # G_filtre = filtre_graphe(G,'a')
-    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
-    # chemin_duree_sans_a = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, sommets, chemin_image_carte, critere='duree', contrainte="sans autoroutes")
+    print(f"Q4: Chemin le plus court SANS autoroutes entre : {ville_depart} et {ville_arrivee}")
+    G_filtre = filtre_graphe(G,'a')
+    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
+    chemin_duree_sans_a = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, sommets, chemin_image_carte, titre='chemin le plus court', critere='duree', contrainte="sans autoroutes")
 
 
 
     # Q5 - chemin le moins cher SANS routes départementales
-    # ville_depart="Brest"
-    # ville_arrivee="Nice"
+    ville_depart="Brest"
+    ville_arrivee="Nice"
 
-    # print(f"Q5: Chemin le moins cher SANS routes départementales entre : {ville_depart} et {ville_arrivee}")
-    # G_filtre = filtre_graphe(G,'d')
-    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
-    # chemin_cout_sans_d = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, sommets, chemin_image_carte, critere='cout', contrainte="sans routes départementales")
+    print(f"Q5: Chemin le moins cher SANS routes départementales entre : {ville_depart} et {ville_arrivee}")
+    G_filtre = filtre_graphe(G,'d')
+    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
+    chemin_cout_sans_d = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, sommets, chemin_image_carte, titre='chemin le moins cher', critere='cout', contrainte="sans routes départementales")
 
 
 
-    # # BONUS1 - afficher le chemin le plus rapide et le chemin le moins cher sur le même graphe
-    # ville_depart="Brest"
-    # ville_arrivee="Marseille"
+    # BONUS1 - afficher le chemin le plus rapide et le chemin le moins cher sur le même graphe
+    ville_depart="Brest"
+    ville_arrivee="Marseille"
 
-    # print(f"BONUS1: Chemin le moins cher vs. le plus rapide entre : {ville_depart} et {ville_arrivee}")
-    # chemin_cout = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    # chemin_duree = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
+    print(f"BONUS1: Chemin le moins cher vs. le plus rapide entre : {ville_depart} et {ville_arrivee}")
+    chemin_cout = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    chemin_duree = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
     
-    # chemin_duree_inverse = list(reversed(chemin_duree))
-    # if len(chemin_duree_inverse) > 2:
-    #     chemin_duree_inverse = chemin_duree_inverse[1:]
-    # chemin_total = chemin_cout + chemin_duree_inverse
+    chemin_duree_inverse = list(reversed(chemin_duree))
+    if len(chemin_duree_inverse) > 2:
+        chemin_duree_inverse = chemin_duree_inverse[1:]
+    chemin_total = chemin_cout + chemin_duree_inverse
     
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, critere='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, titre='time vs. money', critere='cout')
 
 
-    # # BONUS2 - afficher tous les "shortest paths"
-    # ville_depart="Brest"
-    # ville_arrivee="Nice"
+    # BONUS2 - afficher tous les "shortest paths"
+    ville_depart="Brest"
+    ville_arrivee="Nice"
 
-    # meilleur_chemin_all = list(meilleur_chemin_all(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout'))
-    # print(meilleur_chemin_all)
-    # # dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, critere='cout')
-
-
-
-
-    # # BONUS3 - afficher tous les chemins et leur coût. Filtre le graphe avant de lancer l'algo car trop de résultats sinon
-    # ville_depart="Brest"
-    # ville_arrivee="Nice"
-
-    # # G_filtre = filtre_graphe(G,'a')
-    # # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
-
-    # G_filtre = filtre_graphe(G,'d')
-    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
-
-    # result = all_paths_with_costs(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    # result_sorted = sorted(result, key=lambda x: x[1])
-    # for path in result_sorted[0:5]:
-    #     print(path)
-    # # dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, critere='cout')
+    meilleur_chemin_all = list(meilleur_chemin_all(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout'))
+    print(meilleur_chemin_all)
 
 
 
-    # # BONUS4 - afficher l'arbre couvrant poid minimum (MST)
-    # T_cout = find_mst(G,'cout')
-    # dessiner_graphe_sur_carte(T_cout, sommets, chemin_image_carte, "MST coût", export_path="mst_cout.jpg")
 
-    # T_duree = find_mst(G,'duree')
-    # dessiner_graphe_sur_carte(T_duree, sommets, chemin_image_carte, "MST durée", export_path="mst_duree.jpg")
+    # BONUS3 - afficher tous les chemins et leur coût. Filtre le graphe avant de lancer l'algo car trop de résultats sinon
+    ville_depart="Brest"
+    ville_arrivee="Nice"
+
+    # G_filtre = filtre_graphe(G,'a')
+    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
+
+    G_filtre = filtre_graphe(G,'d')
+    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
+
+    result = all_paths_with_costs(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    # Afficher les 5 meilleurs chemins
+    result_sorted = sorted(result, key=lambda x: x[1])
+    for path in result_sorted[0:5]:
+        print(path)
+
+
+    # BONUS4 - afficher l'arbre couvrant poid minimum (MST)
+    T_cout = find_mst(G,'cout')
+    dessiner_graphe_sur_carte(T_cout, sommets, chemin_image_carte, "MST coût", export_path="mst_cout.jpg")
+
+    T_duree = find_mst(G,'duree')
+    dessiner_graphe_sur_carte(T_duree, sommets, chemin_image_carte, "MST durée", export_path="mst_duree.jpg")
 
     
 
-    # BONUS5 - checker si le graphe est euler
+    # BONUS 5a - checker si le graphe est semi-euler
     sommets_impairs = [x for x in G.nodes() if G.degree(x) % 2 == 1]
     for sommet in sommets_impairs:
         print(f"{sommet} - {G.degree(sommet)}")
         
     euler = nx.is_eulerian(G)
     print(f"Graphe dispose d'un cicuit euler ? {euler}")
-
-
-
 
     semieuler = nx.is_semieulerian(G)
     print(f"Graphe dispose d'un parcours euler ? {semieuler}")
@@ -446,9 +443,35 @@ if __name__ == "__main__":
             DG.add_edge(u, v, **attr)
 
         nodes_euler_path = [aretes_euler_path[0][0]] + [v for u, v in aretes_euler_path]
-        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, critere='cout', direction=True, export_path="euler_path.jpg")
+        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, titre='parcours Euler', critere='cout', direction=True, export_path="euler_path.jpg")
 
+    # BONUS 5b - checker si le graphe est euler (supprimer en plus Clermont - Dijon & Chermont - Marseille)
+    sommets_impairs = [x for x in G.nodes() if G.degree(x) % 2 == 1]
+    for sommet in sommets_impairs:
+        print(f"{sommet} - {G.degree(sommet)}")
+        
+    euler = nx.is_eulerian(G)
+    print(f"Graphe dispose d'un cicuit euler ? {euler}")
 
+    semieuler = nx.is_semieulerian(G)
+    print(f"Graphe dispose d'un parcours euler ? {semieuler}")
+
+    if euler:
+        aretes_euler_circuit = list(nx.eulerian_path(G))
+
+        # Create directed graph and copy node positions
+        DG = nx.DiGraph()
+        DG.add_nodes_from(G.nodes(data=True))
+
+        # Add edges along the Euler path and assign the order
+        for order, (u, v) in enumerate(aretes_euler_circuit, start=1):
+            # Copy edge attributes from the original undirected graph
+            attr = G[u][v].copy()
+            attr['cout'] = order  # overwrite cout with Euler order
+            DG.add_edge(u, v, **attr)
+
+        nodes_euler_path = [aretes_euler_circuit[0][0]] + [v for u, v in aretes_euler_circuit]
+        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, titre='circuit Euler', critere='cout', direction=True, export_path="euler_circuit.jpg")
 
     
 
