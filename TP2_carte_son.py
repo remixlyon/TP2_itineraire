@@ -457,7 +457,7 @@ if __name__ == "__main__":
     print(f"Graphe dispose d'un parcours euler ? {semieuler}")
 
     if euler:
-        aretes_euler_circuit = list(nx.eulerian_path(G))
+        aretes_euler_circuit = list(nx.eulerian_path(G, source="Paris"))
 
         # Create directed graph and copy node positions
         DG = nx.DiGraph()
@@ -470,8 +470,8 @@ if __name__ == "__main__":
             attr['cout'] = order  # overwrite cout with Euler order
             DG.add_edge(u, v, **attr)
 
-        nodes_euler_path = [aretes_euler_circuit[0][0]] + [v for u, v in aretes_euler_circuit]
-        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, titre='circuit Euler', critere='cout', direction=True, export_path="euler_circuit.jpg")
+        nodes_euler_circuit = [aretes_euler_circuit[0][0]] + [v for u, v in aretes_euler_circuit]
+        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_circuit, DG, sommets, chemin_image_carte, titre='circuit Euler', critere='cout', direction=True, export_path="euler_circuit.jpg")
 
     
 
