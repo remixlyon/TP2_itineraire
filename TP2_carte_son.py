@@ -110,7 +110,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
 
     plt.show()
 
-def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = ""):
+def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = "", direction=False):
     img = mpimg.imread(chemin_image_carte)
     
     plt.rcParams["figure.figsize"] = (10, 10)
@@ -129,14 +129,24 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
     )
     
     # Surligner les sommets du chemin
+
+
+    if len(chemin) > 2:
+        nx.draw_networkx_nodes(
+            graphe,
+            pos=sommets,
+            ax=ax,
+            nodelist=chemin[1:-1],
+            node_color='red'
+        )
+
     nx.draw_networkx_nodes(
         graphe,
         pos=sommets,
         ax=ax,
-        nodelist=chemin,
-        node_color='red'
+        nodelist=[chemin[0],chemin[-1]],
+        node_color='blue'
     )
-
     
     if len(chemin)==2:
         if graphe.has_edge(chemin[0], chemin[1]):
@@ -160,7 +170,8 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
                 ax=ax,
                 edgelist=[chemin,],
                 edge_color='red' if data['type'] == 'a' else 'green',
-                width=4
+                width=3,
+                arrows=direction
             )
 
             detail = f"meilleur coût = {data['cout']}€" if critere=='cout' else f"meilleur temps = {data['duree']} minutes"
@@ -203,7 +214,8 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
                 ax=ax,
                 edgelist=aretes_chemin,
                 edge_color=couleurs_aretes,
-                width=4
+                width=3,
+                arrows=direction
             )
 
             detail = f"meilleur coût = {round(total_cout,2)}€" if critere=='cout' else f"meilleur temps = {round(total_duree,2)} minutes"
@@ -271,6 +283,13 @@ def all_paths_with_costs(graphe, ville_depart, ville_arrivee, critere="cout"):
 
     return results
 
+# BONUS4: Kruskal MST
+def find_mst(graphe, critere="cout"):
+    T = nx.minimum_spanning_tree(graphe, weight=critere)
+    
+    return T
+
+
 
 if __name__ == "__main__":
     # import sommets data, aretes data et l'image
@@ -285,7 +304,7 @@ if __name__ == "__main__":
     G=creer_graphe(matrice_aretes)
     
     # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale")
-    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale", show_cout=True)
+    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale", show_cout=True, export_path="carte_initiale.jpg")
     
 
     # =================================================================================================
@@ -369,22 +388,54 @@ if __name__ == "__main__":
 
 
 
-    # BONUS3 - afficher tous les chemins et leur coût. Filtre le graphe avant de lancer l'algo car trop de résultats sinon
-    ville_depart="Brest"
-    ville_arrivee="Nice"
+    # # BONUS3 - afficher tous les chemins et leur coût. Filtre le graphe avant de lancer l'algo car trop de résultats sinon
+    # ville_depart="Brest"
+    # ville_arrivee="Nice"
 
-    # G_filtre = filtre_graphe(G,'a')
-    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
+    # # G_filtre = filtre_graphe(G,'a')
+    # # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
 
-    G_filtre = filtre_graphe(G,'d')
-    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
+    # G_filtre = filtre_graphe(G,'d')
+    # dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
 
-    result = all_paths_with_costs(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    result_sorted = sorted(result, key=lambda x: x[1])
-    for path in result_sorted[0:5]:
-        print(path)
+    # result = all_paths_with_costs(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    # result_sorted = sorted(result, key=lambda x: x[1])
+    # for path in result_sorted[0:5]:
+    #     print(path)
+    # # dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, critere='cout')
+
+
+
+    # # BONUS4 - afficher l'arbre couvrant poid minimum (MST)
+    # T_cout = find_mst(G,'cout')
+    # dessiner_graphe_sur_carte(T_cout, sommets, chemin_image_carte, "MST coût", export_path="mst_cout.jpg")
+
+    # T_duree = find_mst(G,'duree')
+    # dessiner_graphe_sur_carte(T_duree, sommets, chemin_image_carte, "MST durée", export_path="mst_duree.jpg")
+
     
-    # dessiner_graphe_sur_carte_avec_chemin(chemin_total, G, sommets, chemin_image_carte, critere='cout')
+
+    # BONUS5 - checker si le graphe est euler
+    sommets_impairs = [x for x in G.nodes() if G.degree(x) % 2 == 1]
+    for sommet in sommets_impairs:
+        print(f"{sommet} - {G.degree(sommet)}")
+        
+    euler = nx.is_eulerian(G)
+    print(f"Graphe dispose d'un cicuit euler ? {euler}")
+
+    semieuler = nx.is_semieulerian(G)
+    print(f"Graphe dispose d'un parcours euler ? {semieuler}")
+
+    if semieuler:
+        DG = G.to_directed()
+        aretes_euler_path = list(nx.eulerian_path(G))
+        nodes_euler_path = [aretes_euler_path[0][0]] + [v for u,v in aretes_euler_path]
+        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, critere='cout', direction=True)
+
+
+
+    
+
 
 
     
