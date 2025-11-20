@@ -133,7 +133,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         node_color='red'
     )
 
-    
+    # Si le "chemin" retourné par la fonction nx customisée ne contient que 2 sommets => checker si c'est le cas "aucune route"
     if len(chemin)==2:
         if graphe.has_edge(chemin[0], chemin[1]):
             # Calcul du coût et de la durée
@@ -224,7 +224,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
             font_size=6,
             ax=ax
         )
-        
+
     plt.show()
 
 def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> list:
