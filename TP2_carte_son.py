@@ -51,38 +51,45 @@ def creer_graphe(matrice_aretes):
         G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
     return G
 
-def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_cout=False, show_duree=False):
-    # lire l'image
+def dessiner_graphe_sur_carte(
+    graphe, 
+    sommets, 
+    chemin_image_carte, 
+    titre, 
+    show_cout=False, 
+    show_duree=False, 
+    show_plot=True
+):
+
+    # read image
     img = mpimg.imread(chemin_image_carte)
 
-    # size canvas = 10x10
+    # size canvas
     plt.rcParams["figure.figsize"] = (10, 10)
-
-    # ax = plot zone
     fig, ax = plt.subplots()
     
-    # afficher img dans ax, couleur grise, cela inverse le graphe
-    ax.imshow(img,cmap="gray")
-    
-    # arete autoroute = red, arte departemental = green
-    couleurs_aretes = []
-    for u, v in graphe.edges():
-        if graphe.edges[u, v]['type'] == 'a':
-            couleurs_aretes.append('red')
-        else:
-            couleurs_aretes.append('green')
+    # display image
+    ax.imshow(img, cmap="gray")
+    ax.axis('off')
 
-    # utilisant nx, dessiner le graphe
+    # edge colors
+    couleurs_aretes = [
+        'red' if graphe.edges[u, v]['type'] == 'a' else 'green'
+        for u, v in graphe.edges()
+    ]
+
+    # draw graph
     nx.draw_networkx(
-        graphe, # réseau des liaisons
-        pos=sommets, # sommets
-        ax=ax, # plot
+        graphe,
+        pos=sommets,
+        ax=ax,
         edge_color=couleurs_aretes,
         font_size=10,
         width=2
     )
 
-    if show_cout == True:
+    # optional edge labels
+    if show_cout:
         edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
@@ -92,7 +99,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
             ax=ax
         )
 
-    if show_duree == True:
+    if show_duree:
         edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
@@ -102,29 +109,44 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
             ax=ax
         )
 
-    # afficher la zone (avec le plot ax)
-    plt.title(f"{titre}")
-    plt.show()
+    # title
+    plt.title(titre)
 
-def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = ""):
+    # show or skip depending on flag
+    if show_plot:
+        plt.show()
+
+    # return figure and axis if needed for embedding in UI
+    return fig, ax
+
+def dessiner_graphe_sur_carte_avec_chemin(
+    chemin: list,
+    graphe,
+    sommets,
+    chemin_image_carte,
+    critere,
+    contrainte="",
+    show_plot=True
+):
+
     img = mpimg.imread(chemin_image_carte)
-    
     plt.rcParams["figure.figsize"] = (10, 10)
     fig, ax = plt.subplots()
-    ax.imshow(img,cmap="gray")
-   
-    # utilisant nx, dessiner le graphe, couleur grise pour highlight plus tard
+    ax.imshow(img, cmap="gray")
+    ax.axis('off')
+
+    # Draw the whole graph in light gray
     nx.draw_networkx(
-        graphe, # réseau des liaisons
-        pos=sommets, # sommets
-        ax=ax, # plot
+        graphe,
+        pos=sommets,
+        ax=ax,
         node_color='gray',
         edge_color='lightgray',
         font_size=10,
         width=1
     )
-    
-    # Surligner les sommets du chemin
+
+    # Highlight the path nodes
     nx.draw_networkx_nodes(
         graphe,
         pos=sommets,
@@ -133,99 +155,55 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         node_color='red'
     )
 
-    # Si le "chemin" retourné par la fonction nx customisée ne contient que 2 sommets => checker si c'est le cas "aucune route"
-    if len(chemin)==2:
-        if graphe.has_edge(chemin[0], chemin[1]):
-            # Calcul du coût et de la durée
-            print(f"--- Itinéraire: {' -> '.join(chemin)} ---")
+    # Determine edges to highlight
+    aretes_chemin = []
+    couleurs_aretes = []
+    total_cout, total_duree = 0, 0
 
-            data = graphe.get_edge_data(chemin[0], chemin[1])
-            if data['type'] == 'a':
-                type_route = "Autoroute"
-            else: type_route = "Departementale"
-            print(f"-1: {chemin[0]} -> {chemin[1]} - {type_route} - Durée = {data['duree']}; Cout = {data['cout']};")
-                
-            print(f"    Durée totale : {data['duree']} minutes")
-            print(f"    Coût total : {data['cout']:.2f} €")
-            print()
+    for i in range(len(chemin) - 1):
+        u, v = chemin[i], chemin[i + 1]
+        data = graphe.get_edge_data(u, v)
+        if not data:
+            continue  # no edge, skip
+        aretes_chemin.append((u, v))
+        color = 'red' if data['type'] == 'a' else 'green'
+        couleurs_aretes.append(color)
+        total_cout += data['cout']
+        total_duree += data['duree']
 
-            # Surligner les arêtes du chemin
-            nx.draw_networkx_edges(
-                graphe,
-                pos=sommets,
-                ax=ax,
-                edgelist=[chemin,],
-                edge_color='red' if data['type'] == 'a' else 'green',
-                width=4
-            )
+    # Highlight path edges
+    nx.draw_networkx_edges(
+        graphe,
+        pos=sommets,
+        ax=ax,
+        edgelist=aretes_chemin,
+        edge_color=couleurs_aretes,
+        width=4
+    )
 
-            detail = f"meilleur coût = {data['cout']}€" if critere=='cout' else f"meilleur temps = {data['duree']} minutes"
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
-        else:
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: pas de route")
-    else:
-        # Calcul du coût et de la durée
-            total_duree = 0
-            total_cout = 0
-            aretes_chemin = []
-            couleurs_aretes = []
-            print(f"--- Itinéraire: {' -> '.join(chemin)} ---")
-            for i in range(len(chemin) - 1):
-                u = chemin[i]
-                v = chemin[i+1]
-                data = graphe.get_edge_data(u, v)
-                if data['type'] == 'a':
-                    type_route = "Autoroute"
-                else: type_route = "Departementale"
-                print(f"-{i+1}: {u} -> {v} - {type_route} - Durée = {data['duree']}; Cout = {data['cout']};")
-
-                total_duree += data['duree']
-                total_cout += data['cout']
-                aretes_chemin.append((u, v))
-
-                if data['type'] == 'a':
-                    couleurs_aretes.append('red')
-                else:
-                    couleurs_aretes.append('green')
-                
-            print(f"    Durée totale : {total_duree} minutes")
-            print(f"    Coût total : {total_cout:.2f} €")
-            print()
-
-            # Surligner les arêtes du chemin
-            nx.draw_networkx_edges(
-                graphe,
-                pos=sommets,
-                ax=ax,
-                edgelist=aretes_chemin,
-                edge_color=couleurs_aretes,
-                width=4
-            )
-
-            detail = f"meilleur coût = {round(total_cout,2)}€" if critere=='cout' else f"meilleur temps = {round(total_duree,2)} minutes"
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {detail}")
-
-    # Afficher cout / durée sur la carte
+    # Edge labels depending on criterion
     if critere == 'cout':
-        edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
-        nx.draw_networkx_edge_labels(
-            graphe,
-            pos=sommets,
-            edge_labels=edge_labels,
-            font_size=6,
-            ax=ax
-        )
+        edge_labels = {(u, v): f"{graphe.edges[u, v]['cout']}€" for u, v in aretes_chemin}
     else:
-        edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
-        nx.draw_networkx_edge_labels(
-            graphe,
-            pos=sommets,
-            edge_labels=edge_labels,
-            font_size=6,
-            ax=ax
-        )
+        edge_labels = {(u, v): f"{graphe.edges[u, v]['duree']}m" for u, v in aretes_chemin}
 
-    plt.show()
+    nx.draw_networkx_edge_labels(
+        graphe,
+        pos=sommets,
+        edge_labels=edge_labels,
+        font_size=6,
+        ax=ax
+    )
+
+    # Title with constraint and total info
+    total_detail = f"Durée={total_duree}m, Coût={total_cout:.2f}€"
+    plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {total_detail}")
+
+    if show_plot:
+        plt.show()
+
+    # Return figure/axis for embedding in UI
+    return fig, ax
 
 def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> list:
     try:
@@ -284,7 +262,7 @@ if __name__ == "__main__":
 
     # Q4 - chemin le plus court SANS autoroutes
     ville_depart="Paris"
-    ville_arrivee="Havre"
+    ville_arrivee="Rouen"
     
     G_filtre = filtre_graphe(G,'a')
     dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "carte sans autoroutes")
