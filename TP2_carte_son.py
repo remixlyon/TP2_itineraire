@@ -110,7 +110,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
 
     plt.show()
 
-def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = "", direction=False):
+def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, contrainte = "", direction=False, export_path=None):
     img = mpimg.imread(chemin_image_carte)
     
     plt.rcParams["figure.figsize"] = (10, 10)
@@ -223,7 +223,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
 
     # Afficher cout / durée sur la carte
     if critere == 'cout':
-        edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
+        edge_labels = {(u, v): f"{d['cout']}" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
             pos=sommets,
@@ -232,7 +232,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
             ax=ax
         )
     else:
-        edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
+        edge_labels = {(u, v): f"{d['duree']}" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
             pos=sommets,
@@ -240,7 +240,9 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
             font_size=6,
             ax=ax
         )
-        
+    
+    if export_path is not None:
+        plt.savefig(export_path, format='jpg', dpi=300)
     plt.show()
 
 def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> list:
@@ -423,14 +425,28 @@ if __name__ == "__main__":
     euler = nx.is_eulerian(G)
     print(f"Graphe dispose d'un cicuit euler ? {euler}")
 
+
+
+
     semieuler = nx.is_semieulerian(G)
     print(f"Graphe dispose d'un parcours euler ? {semieuler}")
 
     if semieuler:
-        DG = G.to_directed()
         aretes_euler_path = list(nx.eulerian_path(G))
-        nodes_euler_path = [aretes_euler_path[0][0]] + [v for u,v in aretes_euler_path]
-        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, critere='cout', direction=True)
+
+        # Create directed graph and copy node positions
+        DG = nx.DiGraph()
+        DG.add_nodes_from(G.nodes(data=True))
+
+        # Add edges along the Euler path and assign the order
+        for order, (u, v) in enumerate(aretes_euler_path, start=1):
+            # Copy edge attributes from the original undirected graph
+            attr = G[u][v].copy()
+            attr['cout'] = order  # overwrite cout with Euler order
+            DG.add_edge(u, v, **attr)
+
+        nodes_euler_path = [aretes_euler_path[0][0]] + [v for u, v in aretes_euler_path]
+        dessiner_graphe_sur_carte_avec_chemin(nodes_euler_path, DG, sommets, chemin_image_carte, critere='cout', direction=True, export_path="euler_path.jpg")
 
 
 
