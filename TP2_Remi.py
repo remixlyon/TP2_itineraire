@@ -169,7 +169,7 @@ def dessiner_graphe_sur_carte(graphe, positions, chemin_image_carte):
 def dijkstra_path(graphe, ville_depart, ville_arrivee, poids_critere):
     """
     Implémentation manuelle de l'algorithme de Dijkstra pour trouver le chemin
-    le plus court entre ville_depart et ville_arrivee selon le 'poids_critere'.
+    le plus court entre la ville de depart et la ville d'arrivee selon le 'poids_critere'.
 
     Retourne: La liste des villes formant le chemin, ou un message d'erreur.
     """
@@ -227,10 +227,51 @@ def dijkstra_path(graphe, ville_depart, ville_arrivee, poids_critere):
 # --- Fonctions Utilisant Dijkstra
 # =============================================================================
 
-# 1. Connexité (Utilise toujours la fonction NetworkX, ce n'est pas un algo de chemin)
+# --- Nouvelle fonction utilitaire pour le parcours en profondeur (DFS) ---
+def parcours_dfs(graphe, depart):
+    """
+    Effectue un parcours en profondeur (DFS) à partir du sommet de départ
+    et retourne l'ensemble des sommets accessibles (visités).
+    """
+    visites = set()
+    pile = [depart] # Utilisation d'une pile (liste) pour le DFS
+
+    while pile:
+        sommet_actuel = pile.pop()
+        
+        if sommet_actuel not in visites:
+            visites.add(sommet_actuel)
+            
+            # Ajouter les voisins non visités à la pile
+            for voisin in graphe.neighbors(sommet_actuel):
+                if voisin not in visites:
+                    pile.append(voisin)
+                    
+    return visites
+
+
+# 1. Connexité (RECODÉE SANS nx.is_connected) ---
 def est_connexe(graphe):
-    """Retourne Vrai si le graphe est connexe, Faux sinon."""
-    return nx.is_connected(graphe)
+    """
+    Vérifie la connexité en utilisant le Parcours en Profondeur (DFS).
+    Retourne Vrai si le graphe est connexe, Faux sinon.
+    """
+    # Cas d'un graphe vide ou sans sommets
+    if graphe.number_of_nodes() == 0:
+        return True # Un graphe vide est souvent considéré comme connexe
+    
+    # 1. Choisir un sommet de départ arbitraire (le premier dans la liste des nœuds)
+    sommet_depart = list(graphe.nodes())[0]
+    
+    # 2. Effectuer le parcours pour trouver les sommets accessibles
+    sommets_visites = parcours_dfs(graphe, sommet_depart)
+    
+    # 3. Vérifier si tous les sommets ont été visités
+    if len(sommets_visites) == graphe.number_of_nodes():
+        return True
+    else:
+        return False
+
 
 # 2. Meilleur chemin (durée)
 def meilleur_chemin_duree(graphe, ville_depart, ville_arrivee):
@@ -382,8 +423,8 @@ if __name__ == "__main__":
             print(f"Le graphe est-il connexe ? {est_connexe(G)}")
             
             # Définir des villes de test
-            ville_depart = "Lille"
-            ville_arrivee = "Marseille"
+            ville_depart = "Paris"
+            ville_arrivee = "Brest"
             
             # 2. Meilleur chemin (durée)
             print(f"\n--- Test 2: Meilleur chemin (durée) de {ville_depart} à {ville_arrivee} ---")
