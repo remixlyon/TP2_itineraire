@@ -366,15 +366,17 @@ def connexe_manuel(graphe) -> tuple[bool, list]:
 
     return est_connexe, continents
 
-def filtre_graphe(graphe_initiale, type_a_exclure):
+def filtre_graphe(graphe_initiale, type_a_exclure=None, ville_a_exclure=[]):
     G_filtre = nx.Graph()
     
     for node, data in graphe_initiale.nodes(data=True):
-        G_filtre.add_node(node, **data)
+        if node not in ville_a_exclure:
+            G_filtre.add_node(node, **data)
     
     for u, v, data in graphe_initiale.edges(data=True):
-        if data['type'] != type_a_exclure:
-            G_filtre.add_edge(u, v, **data)
+        if u not in ville_a_exclure and v not in ville_a_exclure:
+            if data['type'] != type_a_exclure:
+                G_filtre.add_edge(u, v, **data)
     return G_filtre
 
 # BONUS2: lister tous les bons chemins
@@ -514,10 +516,8 @@ if __name__ == "__main__":
     chemin_duree_sans_a, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
     dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total, contrainte="sans autoroutes")
 
-
-
     # Q5 - chemin le moins cher SANS routes départementales
-    ville_depart="Brest"
+    ville_depart="Rouen"
     ville_arrivee="Nice"
 
     print(f"Q5: Chemin le moins cher SANS routes départementales entre : {ville_depart} et {ville_arrivee}")
@@ -526,7 +526,16 @@ if __name__ == "__main__":
     chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
 
+    # Q5-bonus - chemin le moins cher SANS routes départementales SANS quelques villes
+    ville_depart="Rouen"
+    ville_arrivee="Toulouse"
+    villes_exclues=["Paris","Marseille"]
 
+    print(f"Q5-bonus: Chemin le moins cher SANS routes départementales et sans passer par {villes_exclues} entre : {ville_depart} et {ville_arrivee}")
+    G_filtre = filtre_graphe(G,type_a_exclure='d',ville_a_exclure=villes_exclues)
+    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout_exclure_villes.jpg")
+    chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
 
 
 
