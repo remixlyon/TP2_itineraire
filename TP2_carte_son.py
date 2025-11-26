@@ -238,19 +238,17 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
     plt.show()
 
 # Fonction pour trouver le meilleur chemin (remplaçant manuel de nx.shortest_path)
-def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list, float]:
+def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -> tuple[list, float]:
 
     # Etape 0: vérifier si les villes données sont valides
     if ville_depart not in graphe:
         msg = f"{ville_depart} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
-    
     if ville_arrivee not in graphe:
         msg = f"{ville_depart} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
-    
     if ville_depart==ville_arrivee:
         msg = f"Même ville ({ville_depart}) - Métro boulot dodo ?"
         print(msg)        
@@ -266,30 +264,38 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list,
     # 2. Boucle principale de Dijkstra
     # File de priorité: (distance_actuelle, ville_actuelle)
     pq = [(0, ville_depart)] 
+    if debug: print(f'>> START: départ de {ville_depart}') 
     while pq:
         # Extraire le sommet non visité avec la plus petite distance
-        dist_actuelle, u = heapq.heappop(pq)
+        dist_nouvelle, u = heapq.heappop(pq)
+        if debug: print(f'>> Explorer les voisins de {u} ({dist_nouvelle}): {list(graphe.neighbors(u))}') 
 
         # Si nous avons déjà trouvé un chemin plus court pour 'u', ignorer cette entrée et reprendre la boucle WHILE
-        if dist_actuelle > distances[u]:
+        if dist_nouvelle > distances[u]:
+            if debug: print(f'>>    On a déjà une distance plus petite pour {u} (actuelle {distances[u]}; nouvelle {dist_nouvelle})') 
             continue
         
         # Si la destination est atteinte, STOP la boucle While
         if u == ville_arrivee:
+            if debug: print(f'>> STOP: Arrivé à {u}') 
             break
 
         # 2a. On examine chaque sommet voisin
         for v in graphe.neighbors(u):
             # Récupérer le poids de l'arête (critère durée ou coût)
             poids = graphe.get_edge_data(u, v).get(critere, float('inf'))
-
+            if debug: print(f'>>    De {u} à {v}: distance = {poids}') 
             
-            nouvelle_distance = dist_actuelle + poids
+            nouvelle_distance = dist_nouvelle + poids
+            if debug: print(f'>>    Nouvelle distance de {v} = {nouvelle_distance}') 
 
             # 2b. Mettre à jour le poid du voisin v si on trouve un chemin plus court vers lui
             if nouvelle_distance < distances[v]:
                 distances[v] = nouvelle_distance
+                if debug: print(f'>>    Meilleure distance trouvée pour {v} = {nouvelle_distance}') 
+
                 predecesseurs[v] = u
+                if debug: print(f'>>    Mettre à jour le chemin vers {v} en passant par {u}') 
                 heapq.heappush(pq, (nouvelle_distance, v))
 
     # 3. Reconstruction du chemin
@@ -469,9 +475,22 @@ if __name__ == "__main__":
 
     # Q2 - chemin le plus court
     ville_depart="Paris"
-    ville_arrivee="Marseille"
+    ville_arrivee="Bastia"
+
+    # optimisation pour reduire le nombre de checks
+    if not est_connexe:
+        for continent in continents:
+            if ville_depart in continent:
+                continent_depart = continent
+            if ville_arrivee in continent:
+                continent_arrivee = continent
+        if len(continent_depart) > len(continent_arrivee):
+            tmp = ville_depart 
+            ville_depart = ville_arrivee
+            ville_arrivee = tmp
+
     print(f"Q2: Chemin le plus court entre : {ville_depart} et {ville_arrivee}")
-    chemin_duree, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
+    chemin_duree, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree', debug=True)
     dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total)
 
 
