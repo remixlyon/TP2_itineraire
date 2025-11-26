@@ -1,11 +1,11 @@
 import csv
 import heapq
-import random
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-def charger_csv_en_matrice(nom_fichier):
+# Fonction pour charger CSV en matrice
+def charger_csv_en_matrice(nom_fichier) -> list:
     matrice = []
     with open(nom_fichier, mode='r', encoding='utf-8') as f:
         lecteur = csv.reader(f, delimiter=';')
@@ -14,7 +14,8 @@ def charger_csv_en_matrice(nom_fichier):
                 matrice.append(ligne)
     return matrice
 
-def charger_sommets(matrice_position):
+# Fonction pour charger les sommets à partir d'une matrice
+def charger_sommets(matrice_position) -> dict:
     sommets = {}
     
     # Noter l'indexe de chaque champ
@@ -32,28 +33,51 @@ def charger_sommets(matrice_position):
     
     return sommets
 
-def creer_graphe(matrice_aretes):
-    G = nx.Graph()
-    header = matrice_aretes[0]
+# Fonction pour charger les liaison à partir d'une matrice
+def charger_liaisons(matrice_aretes) -> list:
+    liaisons = []
     
     # Noter l'indexe de chaque champ
+    header = matrice_aretes[0]
     idx_v1 = header.index('Ville1')
     idx_v2 = header.index('ville2')
     idx_type = header.index('type')
     idx_duree = header.index('duree')
     idx_cout = header.index('cout')
 
-    # pour chaque ligne, ajoute une liaison entre 2 villes
+    # Extraire toutes les liaisons à partir de la 2ème ligne et ajouter dans le dictionnaire
     for ligne in matrice_aretes[1:]:
         ville1 = ligne[idx_v1]
         ville2 = ligne[idx_v2]
         type_liaison = ligne[idx_type]
         duree = float(ligne[idx_duree])
         cout = float(ligne[idx_cout])
-        G.add_edge(ville1, ville2, type=type_liaison, duree=duree, cout=cout)
+
+        # Stocker ville1, ville2, data dans un tuple et ajouter le tuple dans la list
+        liaisons.append(
+            (ville1, ville2, {
+                "type": type_liaison,
+                "duree": duree,
+                "cout": cout
+            })
+        )
+
+    return liaisons
+
+# Fonction pour créer le graphe à partir des sommets & liaisons
+def creer_graphe(sommets, liaisons):
+    G = nx.Graph()
+
+    # add_nodes prend en input dict (sommet:[x,y], ...)
+    for ville, pos in sommets.items():
+        G.add_node(ville, pos=pos)
+
+    # add_edges_from prend en input une liste (sommet1, sommet2, {data1,data2 ...})
+    G.add_edges_from(liaisons)
     return G
 
-def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_cout=False, show_duree=False, export_path=None):
+# Fonction pour dessiner le graphe sur le JPG
+def dessiner_graphe_sur_carte(graphe, chemin_image_carte, titre, show_cout=False, show_duree=False, export_path=None):
     # lire l'image
     img = mpimg.imread(chemin_image_carte)
 
@@ -63,7 +87,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
     # ax = plot zone
     fig, ax = plt.subplots()
     
-    # afficher img dans ax, couleur grise, cela inverse le graphe
+    # afficher img dans ax, couleur grise (sinon jaune-vert), cela inverse le graphe
     ax.imshow(img,cmap="gray")
     
     # arete autoroute = red, arte departemental = green
@@ -74,10 +98,12 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
         else:
             couleurs_aretes.append('green')
 
+    pos = nx.get_node_attributes(graphe, 'pos')
+
     # utilisant nx, dessiner le graphe
     nx.draw_networkx(
         graphe, # réseau des liaisons
-        pos=sommets, # sommets
+        pos=pos, # sommets
         ax=ax, # plot
         edge_color=couleurs_aretes,
         font_size=10,
@@ -88,7 +114,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
         edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
-            pos=sommets,
+            pos=pos,
             edge_labels=edge_labels,
             font_size=5,
             ax=ax
@@ -98,7 +124,7 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
         edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
-            pos=sommets,
+            pos=pos,
             edge_labels=edge_labels,
             font_size=5,
             ax=ax
@@ -112,17 +138,20 @@ def dessiner_graphe_sur_carte(graphe, sommets, chemin_image_carte, titre, show_c
 
     plt.show()
 
-def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_image_carte, critere, poids_total, titre, contrainte = "", direction=False, export_path=None):
+# Fonction pour dessiner le graphe sur le JPG et tracer le chemin
+def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_carte, critere, poids_total, titre, contrainte = "", direction=False, export_path=None):
     # redessiner la carte
     img = mpimg.imread(chemin_image_carte)
     plt.rcParams["figure.figsize"] = (10, 10)
     fig, ax = plt.subplots()
     ax.imshow(img,cmap="gray")
    
+    pos = nx.get_node_attributes(graphe, 'pos')
+
     # utilisant nx, dessiner le graphe, couleur grise pour highlight plus tard
     nx.draw_networkx(
         graphe,
-        pos=sommets,
+        pos=pos,
         ax=ax,
         node_color='gray',
         edge_color='lightgray',
@@ -130,12 +159,11 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         width=1
     )
 
-
     # Surligner en rouge les sommets intermédiaires du chemin
     if len(chemin) >=2 :
         nx.draw_networkx_nodes(
             graphe,
-            pos=sommets,
+            pos=pos,
             ax=ax,
             nodelist=chemin[1:-1],
             node_color='red'
@@ -144,7 +172,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         # Surligner en blue les extrémités du chemin
         nx.draw_networkx_nodes(
             graphe,
-            pos=sommets,
+            pos=pos,
             ax=ax,
             nodelist=[chemin[0],chemin[-1]],
             node_color='blue'
@@ -169,7 +197,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         # Surligner les arêtes du chemin
         nx.draw_networkx_edges(
             graphe,
-            pos=sommets,
+            pos=pos,
             ax=ax,
             edgelist=aretes_chemin,
             edge_color=couleurs_aretes,
@@ -182,22 +210,22 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
             edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
             nx.draw_networkx_edge_labels(
                 graphe,
-                pos=sommets,
+                pos=pos,
                 edge_labels=edge_labels,
                 font_size=5,
                 ax=ax
             )
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}. Cout total = {poids_total}€")
+            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}. Cout total = {round(poids_total,2)}€")
         else:
             edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
             nx.draw_networkx_edge_labels(
                 graphe,
-                pos=sommets,
+                pos=pos,
                 edge_labels=edge_labels,
                 font_size=5,
                 ax=ax
             )
-            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}. Duree totale = {poids_total}m")
+            plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}. Duree totale = {int(poids_total // 60)}h {int(poids_total % 60)} minutes")
 
     elif poids_total==0 and len(chemin)==1:
         plt.title(f"{chemin[0]}")
@@ -209,6 +237,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, sommets, chemin_
         plt.savefig(export_path, format='jpg', dpi=300)
     plt.show()
 
+# Fonction pour trouver le meilleur chemin (remplaçant manuel de nx.shortest_path)
 def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list, float]:
 
     # Etape 0: vérifier si les villes données sont valides
@@ -221,8 +250,11 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list,
         msg = f"{ville_depart} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
-
-
+    
+    if ville_depart==ville_arrivee:
+        msg = f"Même ville ({ville_depart}) - Métro boulot dodo ?"
+        print(msg)        
+        return [msg],0
 
     # Etape 1: 
     # donner un poid infini à tous les sommets sauf ville_depart à 0
@@ -230,9 +262,6 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list,
     distances[ville_depart] = 0
     # initier un dict pour noter les meilleurs sommet-1
     predecesseurs = {ville: None for ville in graphe.nodes}
-    
-
-    
 
     # 2. Boucle principale de Dijkstra
     # File de priorité: (distance_actuelle, ville_actuelle)
@@ -263,9 +292,6 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list,
                 predecesseurs[v] = u
                 heapq.heappush(pq, (nouvelle_distance, v))
 
-    
-
-
     # 3. Reconstruction du chemin
     meilleur_chemin = []
     if distances[ville_arrivee] == float('inf'):
@@ -284,22 +310,21 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere) -> tuple[list,
 
     # poids total
     poids_total = distances[ville_arrivee]
+    devise = '€' if critere=='cout' else ' minutes'
 
     for i in range(len(meilleur_chemin)-1):
         u = meilleur_chemin[i]
         v = meilleur_chemin[i+1]
-        devise = '€' if critere=='cout' else ' minutes'
         distance = graphe.get_edge_data(u, v).get(critere)
         type = poids = graphe.get_edge_data(u, v).get('type')
         print(f'    {u} -> {v} ({type}): {distance}{devise}')
-    print(f'    *TOTAL* = {poids_total}{devise}')
-    
+    print(f'    *TOTAL* = {round(poids_total,2)}{devise}')
 
-
-
+    # Rendre le chemin et la distance totale
     return meilleur_chemin, poids_total
 
-def connexe_manuel(graphe) -> bool:
+# Fonction pour savoir si le graphe est connexe (remplaçant manuel de nx.is_connected)
+def connexe_manuel(graphe) -> tuple[bool, list]:
 
     sommets_vu = set()  # liste des sommets déjà explorés
     continents = []  # liste des groupes de sommets isolés
@@ -335,10 +360,11 @@ def connexe_manuel(graphe) -> bool:
 
     return est_connexe, continents
 
-
 def filtre_graphe(graphe_initiale, type_a_exclure):
     G_filtre = nx.Graph()
-    G_filtre.add_nodes_from(graphe_initiale.nodes())
+    
+    for node, data in graphe_initiale.nodes(data=True):
+        G_filtre.add_node(node, **data)
     
     for u, v, data in graphe_initiale.edges(data=True):
         if data['type'] != type_a_exclure:
@@ -376,6 +402,34 @@ def find_mst(graphe, critere="cout"):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     # import sommets data, aretes data et l'image
     matrice_sommets = charger_csv_en_matrice("TP2_position.csv")
@@ -384,9 +438,10 @@ if __name__ == "__main__":
 
     # creer sommets dict
     sommets = charger_sommets(matrice_sommets)
+    liaisons = charger_liaisons(matrice_aretes)
 
     # creer graphe
-    G=creer_graphe(matrice_aretes)
+    G=creer_graphe(sommets, liaisons)
     
     # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale")
     # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale", show_cout=True, export_path="carte_initiale.jpg")
@@ -408,25 +463,25 @@ if __name__ == "__main__":
         for ville in continent:
             print(f"    - {ville}")
         
-    dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, f"graphe {connexe}")
+    dessiner_graphe_sur_carte(G, chemin_image_carte, titre=f"graphe {connexe}", export_path="carte_initiale.jpg")
 
 
 
     # Q2 - chemin le plus court
-    ville_depart="Ajaccio"
-    ville_arrivee="Bastia"
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
     print(f"Q2: Chemin le plus court entre : {ville_depart} et {ville_arrivee}")
     chemin_duree, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, sommets, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total)
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total)
 
 
 
     # Q3 - chemin le moins cher
-    ville_depart="Ajaccio"
-    ville_arrivee="Bastia"
+    ville_depart="Paris"
+    ville_arrivee="Marseille"
     print(f"Q3: Chemin le moins cher entre : {ville_depart} et {ville_arrivee}")
     chemin_cout, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, sommets, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total)
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total)
 
 
 
@@ -436,9 +491,9 @@ if __name__ == "__main__":
     
     print(f"Q4: Chemin le plus court SANS autoroutes entre : {ville_depart} et {ville_arrivee}")
     G_filtre = filtre_graphe(G,'a')
-    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
+    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
     chemin_duree_sans_a, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, sommets, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total, contrainte="sans autoroutes")
+    dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total, contrainte="sans autoroutes")
 
 
 
@@ -448,9 +503,31 @@ if __name__ == "__main__":
 
     print(f"Q5: Chemin le moins cher SANS routes départementales entre : {ville_depart} et {ville_arrivee}")
     G_filtre = filtre_graphe(G,'d')
-    dessiner_graphe_sur_carte(G_filtre, sommets, chemin_image_carte, "Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
+    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
     chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, sommets, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # # ==============================================================================================
 
