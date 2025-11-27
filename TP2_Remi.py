@@ -423,8 +423,8 @@ if __name__ == "__main__":
             print(f"Le graphe est-il connexe ? {est_connexe(G)}")
             
             # Définir des villes de test
-            ville_depart = "Paris"
-            ville_arrivee = "Brest"
+            ville_depart = "Brest"
+            ville_arrivee = "Nice"
             
             # 2. Meilleur chemin (durée)
             print(f"\n--- Test 2: Meilleur chemin (durée) de {ville_depart} à {ville_arrivee} ---")
