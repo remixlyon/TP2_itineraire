@@ -4,6 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+
 # Fonction pour charger CSV en matrice
 def charger_csv_en_matrice(nom_fichier) -> list:
     matrice = []
@@ -242,11 +243,11 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
 
     # Etape 0: vérifier si les villes données sont valides
     if ville_depart not in graphe:
-        msg = f"{ville_depart} n'est pas présente dans la carte"
+        msg = f"    {ville_depart} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
     if ville_arrivee not in graphe:
-        msg = f"{ville_depart} n'est pas présente dans la carte"
+        msg = f"    {ville_depart} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
     if ville_depart==ville_arrivee:
@@ -272,7 +273,7 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
 
         # Si nous avons déjà trouvé un chemin plus court pour 'u', ignorer cette entrée et reprendre la boucle WHILE
         if dist_nouvelle > distances[u]:
-            if debug: print(f'>>    On a déjà une distance plus petite pour {u} (actuelle {distances[u]}; nouvelle {dist_nouvelle})') 
+            if debug: print(f'>>    [IGNORE] On a déjà une distance plus petite pour {u} (actuelle {distances[u]}; nouvelle {dist_nouvelle})') 
             continue
         
         # Si la destination est atteinte, STOP la boucle While
@@ -287,16 +288,20 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
             if debug: print(f'>>    De {u} à {v}: distance = {poids}') 
             
             nouvelle_distance = dist_nouvelle + poids
-            if debug: print(f'>>    Nouvelle distance de {v} = {nouvelle_distance}') 
+            if debug: print(f'>>    Nouvelle distance de {v} par rapport à {ville_depart} = {nouvelle_distance}')
+            if debug: print(f'>>    Pour {v}, on compare la distance notée ({distances[v]}) et la nouvelle distance ({nouvelle_distance})') 
 
             # 2b. Mettre à jour le poid du voisin v si on trouve un chemin plus court vers lui
             if nouvelle_distance < distances[v]:
                 distances[v] = nouvelle_distance
-                if debug: print(f'>>    Meilleure distance trouvée pour {v} = {nouvelle_distance}') 
+                if debug: print(f'>>    [MAJ] Pour {v}, la nouvelle distance trouvée est meilleure ({nouvelle_distance})') 
 
                 predecesseurs[v] = u
-                if debug: print(f'>>    Mettre à jour le chemin vers {v} en passant par {u}') 
+                if debug: print(f'>>    [MAJ] Mettre à jour le chemin vers {v} en passant par {u}\n') 
                 heapq.heappush(pq, (nouvelle_distance, v))
+            else: 
+                if debug: print(f'>>    [IGNORE] Pour {v}, la distance notée est meilleure ({distances[v]})\n') 
+
 
     # 3. Reconstruction du chemin
     meilleur_chemin = []
@@ -340,7 +345,7 @@ def connexe_manuel(graphe) -> tuple[bool, list]:
         if ville_depart in sommets_vu:
             continue
 
-        print(f"Exploration à partir de: {ville_depart}")
+        print(f"    Exploration à partir de: {ville_depart}")
 
         # DFS
         stack = [ville_depart]
@@ -357,7 +362,7 @@ def connexe_manuel(graphe) -> tuple[bool, list]:
                     stack.append(neighbor)
 
                     # Show progress
-                    print(f"{neighbor} est connectée")
+                    print(f"        {neighbor} est connectée")
 
         continents.append(continent)
 
@@ -403,10 +408,49 @@ def all_paths_with_costs(graphe, ville_depart, ville_arrivee, critere="cout"):
     return results
 
 # BONUS4: Kruskal MST
-def find_mst(graphe, critere="cout"):
-    T = nx.minimum_spanning_tree(graphe, weight=critere)
+def find_mst(graphe, critere="cout", debug=False):
+    # T = nx.minimum_spanning_tree(graphe, weight=critere)
     
-    return T
+    # manuel
+    def dfs_path_exists(T, source, target):
+        visited = set()
+        stack = [source]
+
+        while stack:
+            node = stack.pop()
+            if node == target:
+                return True
+            if node not in visited:
+                visited.add(node)
+                for voisin in T.neighbors(node):
+                    if voisin not in visited:
+                        stack.append(voisin)
+        return False
+
+    T = nx.Graph()
+    T.add_nodes_from(graphe.nodes(data=True))
+
+    heap = []
+    for u, v, data in graphe.edges(data=True):
+        poid = data[critere]
+        heapq.heappush(heap, (poid, u, v, data))
+
+    poids_total = 0
+
+    while heap:
+        poid, u, v, data = heapq.heappop(heap)
+        if not dfs_path_exists(T, u, v):
+            T.add_edge(u, v, **data)
+            poids_total =+ poid
+            if debug: print(f'>>  [MAJ]     {poid}, {u} - {v}, {data}')
+        else:
+            if debug: print(f'>>  [IGNORE]  {u} - {v} forme une boucle')
+
+        if T.number_of_edges() == graphe.number_of_nodes() - 1:
+            break
+
+    return T, poids_total
+
 
 
 
@@ -457,85 +501,85 @@ if __name__ == "__main__":
 
     # =================================================================================================
     
-    # Q1
-    est_connexe, continents = connexe_manuel(G)
-    if est_connexe:
-        connexe = "est connexe"
-    else: connexe = "n'est pas connexe"
-    print()
-    print(f"Q1: Le graphe {connexe}")
-
-    print(f"Le graphe contient {len(continents)} groupe(s) connexe(s)")
-    for continent in continents:
-        print(f"    Continent ({continents.index(continent)+1}) contient {len(continent)} villes(s):")
-        for ville in continent:
-            print(f"    - {ville}")
+    # # Q1
+    # print(f"Q1: Le graphe est-il connexe ?")
+    # est_connexe, continents = connexe_manuel(G)
+    # if est_connexe:
+    #     connexe = "est connexe"
+    # else: connexe = "n'est pas connexe"
+    # print(f"---> Le graphe {connexe}")
+    # print()
+    # print(f"Le graphe contient {len(continents)} groupe(s) connexe(s)")
+    # for continent in continents:
+    #     print(f"    Continent ({continents.index(continent)+1}) contient {len(continent)} villes(s):")
+    #     for ville in continent:
+    #         print(f"    - {ville}")
         
-    dessiner_graphe_sur_carte(G, chemin_image_carte, titre=f"graphe {connexe}", export_path="carte_initiale.jpg")
+    # dessiner_graphe_sur_carte(G, chemin_image_carte, titre=f"graphe {connexe}", export_path="carte_initiale.jpg")
 
 
 
-    # Q2 - chemin le plus court
-    ville_depart="Paris"
-    ville_arrivee="Bastia"
+    # # Q2 - chemin le plus court
+    # ville_depart="Paris"
+    # ville_arrivee="Bastia"
 
-    # optimisation pour reduire le nombre de checks
-    if not est_connexe:
-        for continent in continents:
-            if ville_depart in continent:
-                continent_depart = continent
-            if ville_arrivee in continent:
-                continent_arrivee = continent
-        if len(continent_depart) > len(continent_arrivee):
-            tmp = ville_depart 
-            ville_depart = ville_arrivee
-            ville_arrivee = tmp
+    # # optimisation pour reduire le nombre de checks
+    # if not est_connexe:
+    #     for continent in continents:
+    #         if ville_depart in continent:
+    #             continent_depart = continent
+    #         if ville_arrivee in continent:
+    #             continent_arrivee = continent
+    #     if len(continent_depart) > len(continent_arrivee):
+    #         tmp = ville_depart 
+    #         ville_depart = ville_arrivee
+    #         ville_arrivee = tmp
 
-    print(f"Q2: Chemin le plus court entre : {ville_depart} et {ville_arrivee}")
-    chemin_duree, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree', debug=True)
-    dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total)
-
-
-
-    # Q3 - chemin le moins cher
-    ville_depart="Paris"
-    ville_arrivee="Marseille"
-    print(f"Q3: Chemin le moins cher entre : {ville_depart} et {ville_arrivee}")
-    chemin_cout, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total)
+    # print(f"Q2: Chemin le plus court entre {ville_depart} et {ville_arrivee}")
+    # chemin_duree, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree', debug=True)
+    # dessiner_graphe_sur_carte_avec_chemin(chemin_duree, G, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total)
 
 
 
-    # Q4 - chemin le plus court SANS autoroutes
-    ville_depart="Paris"
-    ville_arrivee="Havre"
+    # # Q3 - chemin le moins cher
+    # ville_depart="Paris"
+    # ville_arrivee="Marseille"
+    # print(f"Q3: Chemin le moins cher entre {ville_depart} et {ville_arrivee}")
+    # chemin_cout, poids_total = meilleur_chemin(graphe=G, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout', debug=True)
+    # dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total)
+
+
+
+    # # Q4 - chemin le plus court SANS autoroutes
+    # ville_depart="Paris"
+    # ville_arrivee="Havre"
     
-    print(f"Q4: Chemin le plus court SANS autoroutes entre : {ville_depart} et {ville_arrivee}")
-    G_filtre = filtre_graphe(G,'a')
-    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
-    chemin_duree_sans_a, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total, contrainte="sans autoroutes")
+    # print(f"Q4: Chemin le plus court entre {ville_depart} et {ville_arrivee} SANS autoroutes")
+    # G_filtre = filtre_graphe(G,'a')
+    # dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans autoroutes", show_duree=True, export_path="carte_sans_autoroute_avec_duree.jpg")
+    # chemin_duree_sans_a, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='duree')
+    # dessiner_graphe_sur_carte_avec_chemin(chemin_duree_sans_a, G_filtre, chemin_image_carte, titre='chemin le plus court', critere='duree', poids_total=poids_total, contrainte="sans autoroutes")
 
-    # Q5 - chemin le moins cher SANS routes départementales
-    ville_depart="Rouen"
-    ville_arrivee="Nice"
+    # # Q5 - chemin le moins cher SANS routes départementales
+    # ville_depart="Rouen"
+    # ville_arrivee="Nice"
 
-    print(f"Q5: Chemin le moins cher SANS routes départementales entre : {ville_depart} et {ville_arrivee}")
-    G_filtre = filtre_graphe(G,'d')
-    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
-    chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
+    # print(f"Q5: Chemin le moins cher entre {ville_depart} et {ville_arrivee} SANS routes départementales")
+    # G_filtre = filtre_graphe(G,'d')
+    # dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout.jpg")
+    # chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    # dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
 
-    # Q5-bonus - chemin le moins cher SANS routes départementales SANS quelques villes
-    ville_depart="Rouen"
-    ville_arrivee="Toulouse"
-    villes_exclues=["Paris","Marseille"]
+    # # Q5a - chemin le moins cher SANS routes départementales SANS quelques villes
+    # ville_depart="Rouen"
+    # ville_arrivee="Toulouse"
+    # villes_exclues=["Paris","Marseille"]
 
-    print(f"Q5-bonus: Chemin le moins cher SANS routes départementales et sans passer par {villes_exclues} entre : {ville_depart} et {ville_arrivee}")
-    G_filtre = filtre_graphe(G,type_a_exclure='d',ville_a_exclure=villes_exclues)
-    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout_exclure_villes.jpg")
-    chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
+    # print(f"Q5a: Chemin le moins cher entre {ville_depart} et {ville_arrivee} SANS routes départementales et SANS passer par {villes_exclues}")
+    # G_filtre = filtre_graphe(G,type_a_exclure='d',ville_a_exclure=villes_exclues)
+    # dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout_exclure_villes.jpg")
+    # chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    # dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales")
 
 
 
@@ -602,12 +646,16 @@ if __name__ == "__main__":
     #     print(path)
 
 
-    # # BONUS4 - afficher l'arbre couvrant poid minimum (MST)
-    # T_cout = find_mst(G,'cout')
-    # dessiner_graphe_sur_carte(T_cout, sommets, chemin_image_carte, "MST coût", export_path="mst_cout.jpg")
+    # BONUS4 - afficher l'arbre couvrant poid minimum (MST)
+    
+    T_cout, poids_total = find_mst(G,'cout', debug = True)
+    print(f"Bonus 4a: Arbre couvrant au meilleur cout {poids_total}€")
+    dessiner_graphe_sur_carte(T_cout, chemin_image_carte, f"MST coût = {poids_total}€", show_cout=True, export_path="mst_cout.jpg")
+    
 
-    # T_duree = find_mst(G,'duree')
-    # dessiner_graphe_sur_carte(T_duree, sommets, chemin_image_carte, "MST durée", export_path="mst_duree.jpg")
+    T_duree, poids_total = find_mst(G,'duree', debug = True)
+    print(f"Bonus 4a: Arbre couvrant au meilleur temps {poids_total} minutes")
+    dessiner_graphe_sur_carte(T_duree, chemin_image_carte, f"MST durée = {poids_total} minutes", show_duree=True, export_path="mst_duree.jpg")
 
     
 
