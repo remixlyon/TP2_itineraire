@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-# Fonction pour charger CSV en matrice
+# Fonction pour charger CSV en matrice (ignorer les lignes commençant par #)
 def charger_csv_en_matrice(nom_fichier) -> list:
     matrice = []
     with open(nom_fichier, mode='r', encoding='utf-8') as f:
@@ -71,8 +71,8 @@ def creer_graphe(sommets, liaisons):
     G = nx.Graph()
 
     # add_node prend en input dict (sommet:[x,y], ...)
-    for ville, pos in sommets.items():
-        G.add_node(ville, pos=pos)
+    for ville, xy in sommets.items():
+        G.add_node(ville, xy=xy)
 
     # add_edges_from prend en input une liste (sommet1, sommet2, {data1,data2 ...})
     G.add_edges_from(liaisons)
@@ -84,10 +84,10 @@ def dessiner_graphe_sur_carte(graphe, chemin_image_carte, titre, show_cout=False
     # lire l'image
     img = mpimg.imread(chemin_image_carte)
 
-    # size canvas = 10x10
+    # paraméter la taille par défaut de la figure
     plt.rcParams["figure.figsize"] = (10, 10)
 
-    # ax = plot zone
+    # création de la figure avec la zone dessin ax
     fig, ax = plt.subplots()
     
     # afficher img dans ax, couleur grise (sinon jaune-vert), cela inverse le graphe
@@ -101,60 +101,66 @@ def dessiner_graphe_sur_carte(graphe, chemin_image_carte, titre, show_cout=False
         else:
             couleurs_aretes.append('green')
 
-    pos = nx.get_node_attributes(graphe, 'pos')
-
-    # utilisant nx, dessiner le graphe
+    # utilisant nx, dessiner le graphe (nx.draw est plus simple mais moins fine)
     nx.draw_networkx(
         graphe, # réseau des liaisons
-        pos=pos, # sommets
+        pos=nx.get_node_attributes(graphe, 'xy'), # sommets
         ax=ax, # plot
         edge_color=couleurs_aretes,
         font_size=10,
         width=2
     )
 
+    # afficher le cout sur les aretes
     if show_cout == True:
         edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
-            pos=pos,
+            pos=nx.get_node_attributes(graphe, 'xy'), # sommets
             edge_labels=edge_labels,
             font_size=5,
             ax=ax
         )
 
+    # afficher la duree sur les aretes
     if show_duree == True:
         edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
         nx.draw_networkx_edge_labels(
             graphe,
-            pos=pos,
+            pos=nx.get_node_attributes(graphe, 'xy'), # sommets
             edge_labels=edge_labels,
             font_size=5,
             ax=ax
         )
 
-    # afficher la zone (avec le plot ax)
+    # afficher le titre pour le plot
     plt.title(f"{titre}")
 
+    # exporter en jpg
     if export_path is not None:
         plt.savefig(export_path, format='jpg', dpi=300)
 
+    # afficher le plot avec la figure
     plt.show()
 
 # Fonction pour dessiner le graphe sur le JPG et tracer le chemin
 def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_carte, critere, poids_total, titre, contrainte = '', direction=False, export_path=None):
+    """
+    Cas particuliers du 'chemin':
+    - len == 1 : chemin = le msg d'erreur comme quoi les villes départ et arrivée ne sont pas valides
+    - poids_total == 0 : pas de route entre les 2 villes
+    """
+    
     # redessiner la carte
     img = mpimg.imread(chemin_image_carte)
     plt.rcParams["figure.figsize"] = (10, 10)
     fig, ax = plt.subplots()
     ax.imshow(img,cmap="gray")
    
-    pos = nx.get_node_attributes(graphe, 'pos')
-
     # utilisant nx, dessiner le graphe, couleur grise pour highlight plus tard
     nx.draw_networkx(
         graphe,
-        pos=pos,
+        pos=nx.get_node_attributes(graphe, 'xy'), # sommets
         ax=ax,
         node_color='gray',
         edge_color='lightgray',
@@ -166,7 +172,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
     if len(chemin) >=2 :
         nx.draw_networkx_nodes(
             graphe,
-            pos=pos,
+            pos=nx.get_node_attributes(graphe, 'xy'), # sommets
             ax=ax,
             nodelist=chemin[1:-1],
             node_color='red'
@@ -175,13 +181,13 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
         # Surligner en blue les extrémités du chemin
         nx.draw_networkx_nodes(
             graphe,
-            pos=pos,
+            pos=nx.get_node_attributes(graphe, 'xy'), # sommets
             ax=ax,
             nodelist=[chemin[0],chemin[-1]],
             node_color='blue'
         )
 
-    
+    # poid != 0, un chemin est trouvé
     if poids_total!=0:
         aretes_chemin = []
         couleurs_aretes = []
@@ -200,7 +206,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
         # Surligner les arêtes du chemin
         nx.draw_networkx_edges(
             graphe,
-            pos=pos,
+            pos=nx.get_node_attributes(graphe, 'xy'), # sommets
             ax=ax,
             edgelist=aretes_chemin,
             edge_color=couleurs_aretes,
@@ -213,7 +219,7 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
             edge_labels = {(u, v): f"{d['cout']}€" for u, v, d in graphe.edges(data=True)}
             nx.draw_networkx_edge_labels(
                 graphe,
-                pos=pos,
+                pos=nx.get_node_attributes(graphe, 'xy'), # sommets
                 edge_labels=edge_labels,
                 font_size=5,
                 ax=ax
@@ -223,18 +229,20 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
             edge_labels = {(u, v): f"{d['duree']}m" for u, v, d in graphe.edges(data=True)}
             nx.draw_networkx_edge_labels(
                 graphe,
-                pos=pos,
+                pos=nx.get_node_attributes(graphe, 'xy'), # sommets
                 edge_labels=edge_labels,
                 font_size=5,
                 ax=ax
             )
             plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: {titre}. Duree totale = {int(poids_total // 60)}h {int(poids_total % 60)} minutes")
 
+    # si 'chemin' ne contient qu'un élément => c'est juste le msg d'erreur
     elif poids_total==0 and len(chemin)==1:
         plt.title(f"{chemin[0]}")
+
+    # poid == 0, len == 2 (juste les 2 villes) => pas de route
     else:
         plt.title(f"{chemin[0]} -> {chemin[-1]} {contrainte}: pas de route")
-
 
     if export_path is not None:
         plt.savefig(export_path, format='jpg', dpi=300)
@@ -242,6 +250,12 @@ def dessiner_graphe_sur_carte_avec_chemin(chemin: list, graphe, chemin_image_car
 
 # Fonction pour trouver le meilleur chemin (remplaçant manuel de nx.shortest_path)
 def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -> tuple[list, float]:
+    """
+    Cas de retour particuliers:
+    - chemin = msg, poid = 0 : ville(s) invalides
+    - chemin = 2, poid = 0 : pas de route
+    """
+    
     # nx.shortest_path(graphe, ville_depart, ville_arrivee, critere)
 
     # Manuel
@@ -251,7 +265,7 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
         print(msg)        
         return [msg],0
     if ville_arrivee not in graphe:
-        msg = f"    {ville_depart} n'est pas présente dans la carte"
+        msg = f"    {ville_arrivee} n'est pas présente dans la carte"
         print(msg)        
         return [msg],0
     if ville_depart==ville_arrivee:
@@ -263,7 +277,7 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
     # donner un poid infini à tous les sommets sauf ville_depart à 0
     distances = {ville: float('inf') for ville in graphe.nodes}
     distances[ville_depart] = 0
-    # initier un dict pour noter les meilleurs sommet-1
+    # initier un dict pour noter les meilleurs 'sommet-1'
     predecesseurs = {ville: None for ville in graphe.nodes}
 
     # Etape 2. Boucle principale de Dijkstra
@@ -308,6 +322,7 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
 
 
     # 3. Reconstruction du chemin
+    # si la distance de la ville arrivee n'est pas modifiée, aucun chemin n'est trouvé
     meilleur_chemin = []
     if distances[ville_arrivee] == float('inf'):
         meilleur_chemin = [ville_depart,ville_arrivee]
@@ -315,12 +330,13 @@ def meilleur_chemin(graphe, ville_depart, ville_arrivee, critere, debug=False) -
         print(f"    Aucun chemin n'existe entre {ville_depart} et {ville_arrivee}.")
         return meilleur_chemin, poids_total
 
+    # en partir de la destination, reconstruire la chaine de predecesseurs
     ville_courante = ville_arrivee
     while ville_courante is not None:
         meilleur_chemin.append(ville_courante)
         ville_courante = predecesseurs[ville_courante]
     
-    # Le chemin est reconstruit à l'envers, il faut l'inverser
+    # Le chemin est reconstruit à l'envers, il faut donc l'inverser
     meilleur_chemin = meilleur_chemin[::-1]
 
     # poids total
@@ -346,28 +362,38 @@ def connexe_manuel(graphe) -> tuple[bool, list]:
 
     for ville_depart in graphe.nodes():
 
+        # ignorer les villes déjà explorées
         if ville_depart in sommets_vu:
             continue
 
-        print(f"    Exploration à partir de: {ville_depart}")
+        print(f"    [CONTINENT] {ville_depart}")
 
-        # DFS
-        stack = [ville_depart]
-        continent = set([ville_depart])
-        sommets_vu.add(ville_depart)
+        stack = [ville_depart]              # liste des villes à explorer
+        continent = set([ville_depart])     # set des villes d'un continent
+        sommets_vu.add(ville_depart)        # set des villes explorées
 
+        # exploration d'un continent
         while stack:
-            node = stack.pop()
+            # node = stack.pop()              # LIFO (DSF)
+            node = stack.pop(0)              # FIFO (BSF) - moins performant car list (index shifting après pop)
+            print(f"        Exploration à partir de: {node}")
 
-            for neighbor in graphe.neighbors(node):
-                if neighbor not in sommets_vu:
-                    sommets_vu.add(neighbor)
-                    continent.add(neighbor)
-                    stack.append(neighbor)
+            # ignorer les villes déjà explorées
+            if all(neighbor in list(sommets_vu) for neighbor in graphe.neighbors(node)):
+                print(f"            Tous ses voisins sont connectés")
+                continue
+            
+            # explorer les villes voisines
+            for ville in graphe.neighbors(node):
+                if ville not in sommets_vu:
+                    sommets_vu.add(ville)
+                    continent.add(ville)
+                    stack.append(ville)
+                    # print(stack)
+                    # afficher l'avancement
+                    print(f"            {ville} est connectée")
 
-                    # Show progress
-                    print(f"        {neighbor} est connectée")
-
+        # ajouter le continent dans la liste des continents 
         continents.append(continent)
 
     # Graphe est connexe s'il y a un seul continent
@@ -388,52 +414,63 @@ def filtre_graphe(graphe_initiale, type_a_exclure=None, ville_a_exclure=[]):
                 G_filtre.add_edge(u, v, **data)
     return G_filtre
 
-# BONUS2: lister tous les bons chemins
-def meilleur_chemin_all(graphe, ville_depart, ville_arrivee, critere) -> list:
-    try:
-        meilleur_chemin_all = nx.all_shortest_paths(graphe, source=ville_depart, target=ville_arrivee, weight=critere)
-    except nx.NetworkXNoPath:
-        print(f"Aucun chemin n'existe entre {ville_depart} et {ville_arrivee}.")
-        return [ville_depart,ville_arrivee]
-    return meilleur_chemin_all
 
-# BONUS3: lister tous les chemins
-def all_paths_with_costs(graphe, ville_depart, ville_arrivee, critere="cout"):
-    paths = list(nx.all_simple_paths(graphe, ville_depart, ville_arrivee))
-    results = []
 
-    for path in paths:
-        cost = 0
-        for u, v in zip(path[:-1], path[1:]):
-            cost += graphe[u][v][critere]   # sum the cost attribute
+# # BONUS 2: lister tous les bons chemins (nx)
+# def meilleur_chemin_all(graphe, ville_depart, ville_arrivee, critere) -> list:
+#     try:
+#         meilleur_chemin_all = nx.all_shortest_paths(graphe, source=ville_depart, target=ville_arrivee, weight=critere)
+#     except nx.NetworkXNoPath:
+#         print(f"Aucun chemin n'existe entre {ville_depart} et {ville_arrivee}.")
+#         return [ville_depart,ville_arrivee]
+#     return meilleur_chemin_all
 
-        results.append((path, cost))
+# # BONUS 3: lister tous les chemins (nx)
+# def all_paths_with_costs(graphe, ville_depart, ville_arrivee, critere="cout"):
+#     paths = list(nx.all_simple_paths(graphe, ville_depart, ville_arrivee))
+#     results = []
 
-    return results
+#     for path in paths:
+#         cost = 0
+#         for u, v in zip(path[:-1], path[1:]):
+#             cost += graphe[u][v][critere]   # sum the cost attribute
 
-# BONUS4: Kruskal MST
+#         results.append((path, cost))
+
+#     return results
+
+# BONUS 4: Kruskal MST (manuel)
 def find_mst(graphe, critere="cout", debug=False):
+    # nx
     # T = nx.minimum_spanning_tree(graphe, weight=critere)
     
     # manuel
-    def dfs_path_exists(T, source, target):
-        visited = set()
-        stack = [source]
+    # fonction pour détecter les boucles
+    def boucle_check(T, sommet1, sommet2):
+        sommets_vu = set()
+        sommets_vu_ordre = []         # optimisation de perf
+        stack = [sommet1]
 
         while stack:
-            node = stack.pop()
-            if node == target:
-                return True
-            if node not in visited:
-                visited.add(node)
+            node = stack.pop()                  # LIFO (DSF)
+            
+            # s'il existe déjà un chemin de sommet1 vers sommet2
+            if node == sommet2:
+                return True, sommets_vu_ordre
+            
+            # explorer les villes voisines
+            if node not in sommets_vu:
+                sommets_vu.add(node)
+                sommets_vu_ordre.append(node)
                 for voisin in T.neighbors(node):
-                    if voisin not in visited:
+                    if voisin not in sommets_vu:
                         stack.append(voisin)
-        return False
+        return False, []
 
     T = nx.Graph()
     T.add_nodes_from(graphe.nodes(data=True))
 
+    # ajouter les arêtes dans un heapq dans l'ordre croissant 
     heap = []
     for u, v, data in graphe.edges(data=True):
         poid = data[critere]
@@ -443,19 +480,23 @@ def find_mst(graphe, critere="cout", debug=False):
 
     while heap:
         poid, u, v, data = heapq.heappop(heap)
-        if not dfs_path_exists(T, u, v):
+        
+        # vérifier s'il forme une boucle
+        boucle, boucle_chemin = boucle_check(T, u, v)
+        if not boucle:
             T.add_edge(u, v, **data)
-            poids_total =+ poid
+            poids_total += poid
             if debug: print(f'>>  [MAJ]     {poid}, {u} - {v}, {data}')
         else:
-            if debug: print(f'>>  [IGNORE]  {u} - {v} forme une boucle')
+            if debug: print(f'>>  [IGNORE]  {u} - {v} aurait formé une boucle via {boucle_chemin[1:]}')
 
-        if T.number_of_edges() == graphe.number_of_nodes() - 1:
-            break
+        # # Vrai seulement si full-connexe: Kruskal prend fin lors que le nombre d'arêtes = le nombre de sommets - 1
+        # if T.number_of_edges() == graphe.number_of_nodes() - 1:
+        #     break
 
     return T, poids_total
 
-# BONUS5: Euler
+# BONUS 5: Euler (nx)
 def find_euler(graphe, ville_depart, critere):
     aretes_euler_path = list(nx.eulerian_path(graphe,source=ville_depart))
 
@@ -516,12 +557,9 @@ if __name__ == "__main__":
 
     # creer graphe
     G=creer_graphe(sommets, liaisons)
-    
-    # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale")
-    # dessiner_graphe_sur_carte(G, sommets, chemin_image_carte, "Carte Initiale", show_cout=True, export_path="carte_initiale.jpg")
-    
+  
 
-    # =================================================================================================
+    # =================================================================================================================================
     
     # Q1
     print(f"Q1: Le graphe est-il connexe ?")
@@ -533,7 +571,7 @@ if __name__ == "__main__":
     print()
     print(f"Le graphe contient {len(continents)} groupe(s) connexe(s)")
     for continent in continents:
-        print(f"    Continent ({continents.index(continent)+1}) contient {len(continent)} villes(s):")
+        print(f"    Continent {continents.index(continent)+1} contient {len(continent)} villes(s):")
         for ville in continent:
             print(f"    - {ville}")
         
@@ -623,7 +661,7 @@ if __name__ == "__main__":
 
 
 
-    # # ==============================================================================================
+    # # =================================================================================================================================
 
     # # BONUS 1 - afficher le chemin le plus rapide et le chemin le moins cher sur le même graphe
     # ville_depart="Brest"
@@ -668,39 +706,39 @@ if __name__ == "__main__":
     #     print(path)
 
 
-    # # BONUS 4 - afficher l'arbre couvrant poid minimum (MST)
-    # print(f"Bonus 4a: Arbre couvrant au meilleur cout")
-    # T_cout, poids_total = find_mst(G,'cout', debug = True)
-    # print(f"====> Arbre couvrant au meilleur cout {poids_total}€")
-    # dessiner_graphe_sur_carte(T_cout, chemin_image_carte, f"MST coût = {poids_total}€", show_cout=True, export_path="mst_cout.jpg")
+    # BONUS 4 - afficher l'arbre couvrant poid minimum (MST)
+    print(f"Bonus 4a: Arbre couvrant au meilleur cout")
+    T_cout, poids_total = find_mst(G,'cout', debug = True)
+    print(f"====> Arbre couvrant au meilleur cout {round(poids_total,2)}€")
+    dessiner_graphe_sur_carte(T_cout, chemin_image_carte, f"MST coût = {round(poids_total,2)}€", show_cout=True, export_path="mst_cout.jpg")
 
-    # print()
+    print()
 
-    # print(f"Bonus 4b: Arbre couvrant au meilleur temps")
-    # T_duree, poids_total = find_mst(G,'duree', debug = True)
-    # print(f"====> Arbre couvrant au meilleur temps {poids_total} minutes")
-    # dessiner_graphe_sur_carte(T_duree, chemin_image_carte, f"MST durée = {poids_total} minutes", show_duree=True, export_path="mst_duree.jpg")
+    print(f"Bonus 4b: Arbre couvrant au meilleur temps")
+    T_duree, poids_total = find_mst(G,'duree', debug = True)
+    print(f"====> Arbre couvrant au meilleur temps {poids_total} minutes")
+    dessiner_graphe_sur_carte(T_duree, chemin_image_carte, f"MST durée = {poids_total} minutes", show_duree=True, export_path="mst_duree.jpg")
 
     
 
-    # # BONUS 5 - checker si le graphe est semi-euler / euler
-    # print(f"BONUS 5: Verif Euler - degré des sommets")
-    # for sommet in G.nodes():
-    #     print(f"    {sommet} - {G.degree(sommet)} {'(impair)' if G.degree(sommet) % 2 ==1 else ''}")
-    # sommets_impairs = [x for x in G.nodes() if G.degree(x) % 2 == 1]
-    # print(f'Sommets impairs = {sommets_impairs}\n')
-    # for sommet in sommets_impairs:
-    #     print(f"{sommet} - {G.degree(sommet)}")
+    # BONUS 5 - checker si le graphe est semi-euler / euler
+    print(f"BONUS 5: Verif Euler - degré des sommets")
+    for sommet in G.nodes():
+        print(f"    {sommet} - {G.degree(sommet)} {'(impair)' if G.degree(sommet) % 2 ==1 else ''}")
+    sommets_impairs = [x for x in G.nodes() if G.degree(x) % 2 == 1]
+    print(f'Sommets impairs = {sommets_impairs}\n')
+    for sommet in sommets_impairs:
+        print(f"{sommet} - {G.degree(sommet)}")
     
-    # semieuler = nx.is_semieulerian(G)
-    # print(f"Graphe dispose d'un parcours euler ? {semieuler}")
-    # euler = nx.is_eulerian(G)
-    # print(f"Graphe dispose d'un cicuit euler ? {euler}")
+    semieuler = nx.is_semieulerian(G)
+    print(f"Graphe dispose d'un parcours euler ? {semieuler}")
+    euler = nx.is_eulerian(G)
+    print(f"Graphe dispose d'un cicuit euler ? {euler}")
 
-    # ville_depart = 'Nice'
-    # if semieuler or euler:
-    #     DG, chemin_euler, poids_total = find_euler(G, ville_depart=ville_depart, critere='cout')
-    #     dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
+    ville_depart = 'Nice'
+    if semieuler or euler:
+        DG, chemin_euler, poids_total = find_euler(G, ville_depart=ville_depart, critere='cout')
+        dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
 
     
 
