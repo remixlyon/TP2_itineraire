@@ -515,8 +515,89 @@ def find_euler(graphe, ville_depart, critere):
     nodes_euler_path = [aretes_euler_path[0][0]] + [v for u, v in aretes_euler_path]
     return DG, nodes_euler_path, poids_total
 
+# # BONUS 6: Glouton (manuel - not finished)
+# def glouton(graphe, debug=False) -> dict:
+#     heap = []
+#     for sommet in G.nodes():
+#         degree = G.degree(sommet)
+#         heapq.heappush(degree, sommet)
+
+#     couleur = ['red', 'blue', 'green', 'yellow', 'black']
+#     chromatique = {}
+
+#     while heap:
+#         degree, sommet = heapq.heappop(heap)
+#         chromatique[sommet] = couleur[0]
 
 
+#     # fonction pour détecter les boucles
+#     def boucle_check(T, sommet1, sommet2):
+#         sommets_vu = set()
+#         sommets_vu_ordre = []         # optimisation de perf
+#         stack = [sommet1]
+
+#         while stack:
+#             node = stack.pop()                  # LIFO (DSF)
+            
+#             # s'il existe déjà un chemin de sommet1 vers sommet2
+#             if node == sommet2:
+#                 return True, sommets_vu_ordre
+            
+#             # explorer les villes voisines
+#             if node not in sommets_vu:
+#                 sommets_vu.add(node)
+#                 sommets_vu_ordre.append(node)
+#                 for voisin in T.neighbors(node):
+#                     if voisin not in sommets_vu:
+#                         stack.append(voisin)
+#         return False, []
+
+#     T = nx.Graph()
+#     T.add_nodes_from(graphe.nodes(data=True))
+
+#     # ajouter les arêtes dans un heapq dans l'ordre croissant 
+#     heap = []
+#     for u, v, data in graphe.edges(data=True):
+#         poid = data[critere]
+#         heapq.heappush(heap, (poid, u, v, data))
+
+#     poids_total = 0
+
+#     while heap:
+#         poid, u, v, data = heapq.heappop(heap)
+        
+#         # vérifier s'il forme une boucle
+#         boucle, boucle_chemin = boucle_check(T, u, v)
+#         if not boucle:
+#             T.add_edge(u, v, **data)
+#             poids_total += poid
+#             if debug: print(f'>>  [MAJ]     {poid}, {u} - {v}, {data}')
+#         else:
+#             if debug: print(f'>>  [IGNORE]  {u} - {v} aurait formé une boucle via {boucle_chemin[1:]}')
+
+#         # # Vrai seulement si full-connexe: Kruskal prend fin lors que le nombre d'arêtes = le nombre de sommets - 1
+#         # if T.number_of_edges() == graphe.number_of_nodes() - 1:
+#         #     break
+
+#     return T, poids_total
+
+# BONUS 7: 
+def meilleur_chemin_escale(graphe, ville_depart, ville_escale, ville_arrivee, critere, debug=False) -> tuple[list, float]:
+    chemin1, distance1 = meilleur_chemin(graphe, ville_depart, ville_escale, critere, debug=debug)
+    chemin2, distance2 = meilleur_chemin(graphe, ville_escale, ville_arrivee, critere, debug=debug)
+
+    if distance1 == 0 or distance2 == 0:
+        return [ville_depart, ville_escale, ville_arrivee], 0
+
+    chemin_total = chemin1 + chemin2[1:]
+    distance_total = distance1 + distance2
+
+    if debug:
+        print(chemin1)
+        print(chemin2)
+        print(chemin_total)
+
+    return chemin_total, distance_total
 
 
 
@@ -740,7 +821,16 @@ if __name__ == "__main__":
         DG, chemin_euler, poids_total = find_euler(G, ville_depart=ville_depart, critere='cout')
         dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
 
-    
+    # BONUS 7 - imposer une ville d'escale
+    ville_depart="Brest"
+    ville_arrivee="Bordeaux"
+    ville_escale="Nice"
+
+    print(f"BONUS 7: Chemin le moins cher entre {ville_depart} et {ville_arrivee} en passant par {ville_escale}")
+    chemin_cout, poids_total = meilleur_chemin_escale(graphe=G, ville_depart=ville_depart, ville_escale=ville_escale, ville_arrivee=ville_arrivee, critere='cout', debug=False)
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, export_path="chemin_cout_escale.jpg")
+
+
 
 
 
