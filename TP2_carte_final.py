@@ -1,3 +1,11 @@
+"""
+TP Graphe de Son NGUYEN & Rémi DEMOULIN
+1) fonctions de base
+2) main > 5 questions
+3) main > bonus (mst, euler, exclure/imposer une ville)
+
+"""
+
 import csv
 import heapq
 import networkx as nx
@@ -711,16 +719,7 @@ if __name__ == "__main__":
     chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte="sans routes départementales", export_path="chemin_temps_no_d.jpg")
 
-    # Q5a - chemin le moins cher SANS routes départementales SANS quelques villes
-    ville_depart="Rouen"
-    ville_arrivee="Toulouse"
-    villes_exclues=["Paris","Marseille"]
-
-    print(f"Q5a: Chemin le moins cher entre {ville_depart} et {ville_arrivee} SANS routes départementales et SANS passer par {villes_exclues}")
-    G_filtre = filtre_graphe(G,type_a_exclure='d',ville_a_exclure=villes_exclues)
-    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout_exclure_villes.jpg")
-    chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte=f"sans routes départementales et sans {villes_exclues}", export_path="chemin_cout_no_d_no_ville.jpg")
+    
 
 
 
@@ -823,15 +822,25 @@ if __name__ == "__main__":
 
     # BONUS 6: Glouton (manuel - not finished) 
 
-    # BONUS 7 - imposer une ville d'escale
+    # BONUS 7a - imposer une ville d'escale
     ville_depart="Brest"
     ville_arrivee="Bordeaux"
     ville_escale="Nice"
 
-    print(f"BONUS 7: Chemin le moins cher entre {ville_depart} et {ville_arrivee} en passant par {ville_escale}")
+    print(f"BONUS 7a: Chemin le moins cher entre {ville_depart} et {ville_arrivee} en passant par {ville_escale}")
     chemin_cout, poids_total = meilleur_chemin_escale(graphe=G, ville_depart=ville_depart, ville_escale=ville_escale, ville_arrivee=ville_arrivee, critere='cout', debug=False)
     dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre=f'chemin le moins cher en passant par {ville_escale}', critere='cout', poids_total=poids_total, export_path="chemin_cout_escale.jpg")
 
+    # BONUS 7b - chemin le moins cher SANS routes départementales SANS quelques villes
+    ville_depart="Rouen"
+    ville_arrivee="Toulouse"
+    villes_exclues=["Paris","Marseille"]
+
+    print(f"BONUS 7b: Chemin le moins cher entre {ville_depart} et {ville_arrivee} SANS routes départementales et SANS passer par {villes_exclues}")
+    G_filtre = filtre_graphe(G,type_a_exclure='d',ville_a_exclure=villes_exclues)
+    dessiner_graphe_sur_carte(G_filtre, chemin_image_carte, titre="Carte sans routes départementales", show_cout=True, export_path="carte_sans_dept_avec_cout_exclure_villes.jpg")
+    chemin_cout_sans_d, poids_total = meilleur_chemin(graphe=G_filtre, ville_depart=ville_depart, ville_arrivee=ville_arrivee, critere='cout')
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout_sans_d, G_filtre, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, contrainte=f"sans routes départementales et sans {villes_exclues}", export_path="chemin_cout_no_d_no_ville.jpg")
 
 
 
