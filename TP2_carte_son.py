@@ -821,6 +821,8 @@ if __name__ == "__main__":
         DG, chemin_euler, poids_total = find_euler(G, ville_depart=ville_depart, critere='cout')
         dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
 
+    # BONUS 6: Glouton (manuel - not finished) 
+
     # BONUS 7 - imposer une ville d'escale
     ville_depart="Brest"
     ville_arrivee="Bordeaux"
@@ -828,7 +830,7 @@ if __name__ == "__main__":
 
     print(f"BONUS 7: Chemin le moins cher entre {ville_depart} et {ville_arrivee} en passant par {ville_escale}")
     chemin_cout, poids_total = meilleur_chemin_escale(graphe=G, ville_depart=ville_depart, ville_escale=ville_escale, ville_arrivee=ville_arrivee, critere='cout', debug=False)
-    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre='chemin le moins cher', critere='cout', poids_total=poids_total, export_path="chemin_cout_escale.jpg")
+    dessiner_graphe_sur_carte_avec_chemin(chemin_cout, G, chemin_image_carte, titre=f'chemin le moins cher en passant par {ville_escale}', critere='cout', poids_total=poids_total, export_path="chemin_cout_escale.jpg")
 
 
 
