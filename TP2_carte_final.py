@@ -505,7 +505,7 @@ def find_mst(graphe, critere="cout", debug=False):
     return T, poids_total
 
 # BONUS 5: Euler (nx)
-def find_euler(graphe, ville_depart, critere):
+def find_euler(graphe, critere, ville_depart=None):
     aretes_euler_path = list(nx.eulerian_path(graphe,source=ville_depart))
 
     # Créer un graphe directionnel et copier les sommets du graphe initial
@@ -816,8 +816,12 @@ if __name__ == "__main__":
     print(f"Graphe dispose d'un cicuit euler ? {euler}")
 
     ville_depart = 'Nice'
-    if semieuler or euler:
+    if euler:
         DG, chemin_euler, poids_total = find_euler(G, ville_depart=ville_depart, critere='cout')
+        dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
+    
+    if semieuler:
+        DG, chemin_euler, poids_total = find_euler(G, critere='cout')
         dessiner_graphe_sur_carte_avec_chemin(chemin_euler, DG, chemin_image_carte, poids_total=poids_total, titre=f"{'parcours' if semieuler else 'circuit'} Euler", critere='cout', direction=True, export_path="chemin_euler.jpg")
 
     # BONUS 6: Glouton (manuel - not finished) 
